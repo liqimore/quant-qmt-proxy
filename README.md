@@ -1,5 +1,7 @@
 # FastAPI + xtquant 量化交易代理服务
 
+> 持续开发中，请勿生产使用，可能存在跑不起来，数据错误等异常情况
+
 基于FastAPI框架构建的xtquant量化交易代理服务，提供RESTful API接口，封装xtquant的数据和交易功能。
 
 ## 项目结构
