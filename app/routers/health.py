@@ -14,8 +14,9 @@ async def health_check(settings: Settings = Depends(get_settings)):
     return format_response(
         data={
             "status": "healthy",
-            "app_name": settings.app_name,
-            "app_version": settings.app_version,
+            "app_name": settings.app.name,
+            "app_version": settings.app.version,
+            "xtquant_mode": settings.xtquant.mode.value,
             "timestamp": "2024-01-01T00:00:00"
         },
         message="服务运行正常"

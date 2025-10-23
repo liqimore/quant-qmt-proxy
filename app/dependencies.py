@@ -39,9 +39,8 @@ async def verify_api_key(
     if not api_key:
         raise AuthenticationException("API密钥缺失")
     
-    # 这里可以添加实际的API密钥验证逻辑
-    # 目前简单验证非空
-    if not api_key.strip():
+    # 验证API密钥是否在允许列表中
+    if settings.security.api_keys and api_key not in settings.security.api_keys:
         raise AuthenticationException("无效的API密钥")
     
     return api_key
@@ -49,9 +48,22 @@ async def verify_api_key(
 
 def get_xtquant_data_path(settings: Settings = Depends(get_settings)) -> str:
     """获取xtquant数据路径"""
-    return settings.xtquant_data_path
+    return settings.xtquant.data.path
 
 
 def get_xtquant_config_path(settings: Settings = Depends(get_settings)) -> str:
     """获取xtquant配置路径"""
-    return settings.xtquant_config_path
+    return settings.xtquant.data.config_path
+
+
+def get_xtquant_mode(settings: Settings = Depends(get_settings)) -> str:
+    """获取xtquant接口模式"""
+    return settings.xtquant.mode.value
+
+
+def is_real_trading_allowed(settings: Settings = Depends(get_settings)) -> bool:
+    """检查是否允许真实交易"""
+    return (
+        settings.xtquant.mode.value == "real" and 
+        settings.xtquant.trading.allow_real_trading
+    )

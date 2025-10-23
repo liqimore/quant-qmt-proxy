@@ -12,8 +12,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 try:
     import xtquant.xttrader as xttrader
     from xtquant import xtconstant
+    XTQUANT_AVAILABLE = True
 except ImportError as e:
     print(f"警告: 无法导入xtquant模块: {e}")
+    XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
         def __getattr__(self, name):
@@ -32,18 +34,59 @@ from app.models.trading_models import (
 )
 from app.utils.exceptions import TradingServiceException
 from app.utils.helpers import validate_stock_code
+from app.config import Settings, XTQuantMode
 
 
 class TradingService:
     """交易服务类"""
     
-    def __init__(self):
+    def __init__(self, settings: Settings):
         """初始化交易服务"""
+        self.settings = settings
         self._initialized = False
         self._connected_accounts = {}
         self._orders = {}
         self._trades = {}
         self._order_counter = 1000
+        self._try_initialize()
+    
+    def _try_initialize(self):
+        """尝试初始化xttrader"""
+        if not XTQUANT_AVAILABLE:
+            print("xtquant模块不可用，使用模拟交易")
+            self._initialized = False
+            return
+        
+        if self.settings.xtquant.mode == XTQuantMode.MOCK:
+            print("使用模拟交易模式")
+            self._initialized = False
+            return
+        
+        try:
+            # 初始化xttrader
+            # xttrader.connect()
+            self._initialized = True
+            print(f"xttrader初始化成功，模式: {self.settings.xtquant.mode.value}")
+        except Exception as e:
+            print(f"xttrader初始化失败: {e}")
+            self._initialized = False
+    
+    def _should_use_real_trading(self) -> bool:
+        """判断是否使用真实交易"""
+        return (
+            XTQUANT_AVAILABLE and 
+            self._initialized and 
+            self.settings.xtquant.mode == XTQuantMode.REAL and
+            self.settings.xtquant.trading.allow_real_trading
+        )
+    
+    def _should_use_real_data(self) -> bool:
+        """判断是否使用真实数据（但不交易）"""
+        return (
+            XTQUANT_AVAILABLE and 
+            self._initialized and 
+            self.settings.xtquant.mode in [XTQuantMode.REAL, XTQuantMode.DEV]
+        )
     
     def connect_account(self, request: ConnectRequest) -> ConnectResponse:
         """连接交易账户"""

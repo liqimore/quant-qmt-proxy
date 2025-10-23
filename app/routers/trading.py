@@ -12,6 +12,7 @@ from app.models.trading_models import (
 from app.utils.helpers import format_response
 from app.utils.exceptions import TradingServiceException, handle_xtquant_exception
 from app.dependencies import verify_api_key
+from app.config import get_settings, Settings
 
 router = APIRouter(prefix="/api/v1/trading", tags=["交易服务"])
 
@@ -19,11 +20,12 @@ router = APIRouter(prefix="/api/v1/trading", tags=["交易服务"])
 @router.post("/connect", response_model=ConnectResponse)
 async def connect_account(
     request: ConnectRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
 ):
     """连接交易账户"""
     try:
-        trading_service = TradingService()
+        trading_service = TradingService(settings)
         result = trading_service.connect_account(request)
         return result
     except TradingServiceException as e:
@@ -38,11 +40,12 @@ async def connect_account(
 @router.post("/disconnect/{session_id}")
 async def disconnect_account(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
 ):
     """断开交易账户"""
     try:
-        trading_service = TradingService()
+        trading_service = TradingService(settings)
         success = trading_service.disconnect_account(session_id)
         return format_response(
             data={"success": success},

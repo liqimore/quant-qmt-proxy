@@ -72,21 +72,44 @@ quant-qmt-proxy/
 pip install -r requirements.txt
 ```
 
-### 2. 配置环境变量
-```bash
-cp env.example .env
-# 编辑 .env 文件，修改相关配置
-```
+### 2. 配置环境
+项目支持多环境配置，通过YAML文件管理：
+
+- `config_dev.yml` - 开发环境配置
+- `config_test.yml` - 测试环境配置  
+- `config_prod.yml` - 生产环境配置
 
 ### 3. 启动服务
+
+#### 方式1: 使用多环境启动脚本（推荐）
 ```bash
-# 方式1: 使用启动脚本
+# 开发环境（默认使用模拟数据）
+python start.py --env dev
+
+# 测试环境（使用真实数据但不下单）
+python start.py --env test
+
+# 生产环境（使用真实数据并允许下单）
+python start.py --env prod
+
+# 自定义参数
+python start.py --env dev --host 127.0.0.1 --port 8080 --reload
+```
+
+#### 方式2: 使用简单启动脚本
+```bash
+# 设置环境变量
+export ENVIRONMENT=dev  # 或 test, prod
 python run.py
+```
 
-# 方式2: 直接运行
+#### 方式3: 直接运行
+```bash
 python app/main.py
+```
 
-# 方式3: 使用uvicorn
+#### 方式4: 使用uvicorn
+```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -132,18 +155,45 @@ python test_api.py
 
 ## 配置说明
 
-### 环境变量
-- `APP_NAME`: 应用名称
-- `APP_VERSION`: 应用版本
-- `DEBUG`: 调试模式
-- `HOST`: 服务主机
-- `PORT`: 服务端口
-- `LOG_LEVEL`: 日志级别
-- `LOG_FILE`: 日志文件路径
-- `XTQUANT_DATA_PATH`: xtquant数据路径
-- `XTQUANT_CONFIG_PATH`: xtquant配置路径
-- `SECRET_KEY`: 密钥
-- `API_KEY_HEADER`: API密钥头
+### xtquant接口模式
+项目支持三种xtquant接口模式：
+
+- **mock**: 使用模拟数据，不连接真实xtquant服务
+- **real**: 使用真实xtquant接口，允许真实交易
+- **dev**: 开发模式，使用真实xtquant接口但不下单
+
+### 环境配置文件
+
+#### 开发环境 (config_dev.yml)
+```yaml
+xtquant:
+  mode: "mock"  # 使用模拟数据
+  trading:
+    allow_real_trading: false
+```
+
+#### 测试环境 (config_test.yml)  
+```yaml
+xtquant:
+  mode: "dev"  # 使用真实数据但不下单
+  trading:
+    allow_real_trading: false
+```
+
+#### 生产环境 (config_prod.yml)
+```yaml
+xtquant:
+  mode: "real"  # 使用真实数据并允许下单
+  trading:
+    allow_real_trading: true
+```
+
+### 主要配置项
+- `xtquant.mode`: 接口模式 (mock/real/dev)
+- `xtquant.trading.allow_real_trading`: 是否允许真实交易
+- `security.api_keys`: API密钥列表
+- `logging.level`: 日志级别
+- `app.debug`: 调试模式
 
 ## 开发说明
 
@@ -163,10 +213,11 @@ python test_api.py
 4. 在 `app/utils/` 中添加工具函数
 
 ### 注意事项
-- 当前版本使用模拟数据，实际使用时需要连接真实的xtquant服务
+- 当前版本支持三种xtquant接口模式，可根据需要切换
 - 生产环境请修改默认的密钥和认证配置
 - 建议使用HTTPS和更严格的CORS配置
 - 可以根据需要添加数据库支持
+- 真实xtquant接口需要正确安装和配置xtquant包
 
 ## 许可证
 MIT License

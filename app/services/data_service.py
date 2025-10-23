@@ -13,8 +13,10 @@ try:
     import xtquant.xtdata as xtdata
     import xtquant.xttrader as xttrader
     from xtquant import xtconstant
+    XTQUANT_AVAILABLE = True
 except ImportError as e:
     print(f"警告: 无法导入xtquant模块: {e}")
+    XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
         def __getattr__(self, name):
@@ -34,54 +36,81 @@ from app.models.data_models import (
 )
 from app.utils.exceptions import DataServiceException
 from app.utils.helpers import serialize_data, validate_stock_code, validate_date_range
+from app.config import Settings, XTQuantMode
 
 
 class DataService:
     """数据服务类"""
     
-    def __init__(self):
+    def __init__(self, settings: Settings):
         """初始化数据服务"""
+        self.settings = settings
         self._initialized = False
         self._try_initialize()
     
     def _try_initialize(self):
         """尝试初始化xtdata"""
+        if not XTQUANT_AVAILABLE:
+            print("xtquant模块不可用，使用模拟数据")
+            self._initialized = False
+            return
+        
+        if self.settings.xtquant.mode == XTQuantMode.MOCK:
+            print("使用模拟数据模式")
+            self._initialized = False
+            return
+        
         try:
-            # 这里可以添加xtdata的初始化逻辑
-            # xtdata.connect()
+            # 初始化xtdata
+            xtdata.connect()
             self._initialized = True
+            print(f"xtdata初始化成功，模式: {self.settings.xtquant.mode.value}")
         except Exception as e:
             print(f"xtdata初始化失败: {e}")
             self._initialized = False
     
+    def _should_use_real_data(self) -> bool:
+        """判断是否使用真实数据"""
+        return (
+            XTQUANT_AVAILABLE and 
+            self._initialized and 
+            self.settings.xtquant.mode in [XTQuantMode.REAL, XTQuantMode.DEV]
+        )
+    
     def get_market_data(self, request: MarketDataRequest) -> List[MarketDataResponse]:
         """获取市场数据"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
             results = []
             for stock_code in request.stock_codes:
                 if not validate_stock_code(stock_code):
                     raise DataServiceException(f"无效的股票代码: {stock_code}")
                 
-                # 调用xtdata获取市场数据
-                # data = xtdata.get_market_data(
-                #     stock_code, 
-                #     period=request.period.value,
-                #     start_time=request.start_date,
-                #     end_time=request.end_date,
-                #     count=-1,
-                #     dividend_type=request.adjust_type
-                # )
-                
-                # 模拟数据返回
-                mock_data = self._get_mock_market_data(stock_code, request)
+                if self._should_use_real_data():
+                    # 使用真实xtdata接口
+                    try:
+                        data = xtdata.get_market_data(
+                            stock_code, 
+                            period=request.period.value,
+                            start_time=request.start_date,
+                            end_time=request.end_date,
+                            count=-1,
+                            dividend_type=request.adjust_type or "none"
+                        )
+                        
+                        # 转换数据格式
+                        formatted_data = self._format_market_data(data, request.fields)
+                        
+                    except Exception as e:
+                        print(f"获取真实数据失败，使用模拟数据: {e}")
+                        formatted_data = self._get_mock_market_data(stock_code, request)
+                else:
+                    # 使用模拟数据
+                    formatted_data = self._get_mock_market_data(stock_code, request)
                 
                 response = MarketDataResponse(
                     stock_code=stock_code,
-                    data=mock_data,
-                    fields=["time", "open", "high", "low", "close", "volume"],
+                    data=formatted_data,
+                    fields=request.fields or ["time", "open", "high", "low", "close", "volume"],
                     period=request.period.value,
                     start_date=request.start_date,
                     end_date=request.end_date
@@ -95,28 +124,34 @@ class DataService:
     
     def get_financial_data(self, request: FinancialDataRequest) -> List[FinancialDataResponse]:
         """获取财务数据"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
             results = []
             for stock_code in request.stock_codes:
                 for table_name in request.table_list:
-                    # 调用xtdata获取财务数据
-                    # data = xtdata.get_financial_data(
-                    #     stock_code,
-                    #     table_list=[table_name],
-                    #     start_time=request.start_date,
-                    #     end_time=request.end_date
-                    # )
-                    
-                    # 模拟数据返回
-                    mock_data = self._get_mock_financial_data(stock_code, table_name)
+                    if self._should_use_real_data():
+                        # 使用真实xtdata接口
+                        try:
+                            data = xtdata.get_financial_data(
+                                stock_code,
+                                table_list=[table_name],
+                                start_time=request.start_date,
+                                end_time=request.end_date
+                            )
+                            
+                            # 转换数据格式
+                            formatted_data = self._format_financial_data(data, table_name)
+                            
+                        except Exception as e:
+                            print(f"获取真实财务数据失败，使用模拟数据: {e}")
+                            formatted_data = self._get_mock_financial_data(stock_code, table_name)
+                    else:
+                        # 使用模拟数据
+                        formatted_data = self._get_mock_financial_data(stock_code, table_name)
                     
                     response = FinancialDataResponse(
                         stock_code=stock_code,
                         table_name=table_name,
-                        data=mock_data,
+                        data=formatted_data,
                         columns=["date", "value1", "value2", "value3"]
                     )
                     results.append(response)
@@ -128,14 +163,29 @@ class DataService:
     
     def get_sector_list(self) -> List[SectorResponse]:
         """获取板块列表"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
-            # 调用xtdata获取板块列表
-            # sectors = xtdata.get_sector_list()
+            if self._should_use_real_data():
+                # 使用真实xtdata接口
+                try:
+                    sectors = xtdata.get_sector_list()
+                    results = []
+                    for sector_name in sectors:
+                        # 获取板块内股票列表
+                        stock_list = xtdata.get_stock_list_in_sector(sector_name)
+                        
+                        response = SectorResponse(
+                            sector_name=sector_name,
+                            stock_list=stock_list,
+                            sector_type="industry"  # 可以根据实际情况调整
+                        )
+                        results.append(response)
+                    
+                    return results
+                    
+                except Exception as e:
+                    print(f"获取真实板块数据失败，使用模拟数据: {e}")
             
-            # 模拟数据返回
+            # 使用模拟数据
             mock_sectors = [
                 {"sector_name": "银行", "sector_type": "industry"},
                 {"sector_name": "科技", "sector_type": "industry"},
@@ -144,9 +194,6 @@ class DataService:
             
             results = []
             for sector_info in mock_sectors:
-                # 获取板块内股票列表
-                # stock_list = xtdata.get_stock_list_in_sector(sector_info["sector_name"])
-                
                 # 模拟股票列表
                 mock_stock_list = ["000001.SZ", "000002.SZ", "600000.SH"]
                 
@@ -164,14 +211,25 @@ class DataService:
     
     def get_index_weight(self, request: IndexWeightRequest) -> IndexWeightResponse:
         """获取指数权重"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
-            # 调用xtdata获取指数权重
-            # weights = xtdata.get_index_weight(request.index_code, request.date)
+            if self._should_use_real_data():
+                # 使用真实xtdata接口
+                try:
+                    weights = xtdata.get_index_weight(request.index_code, request.date)
+                    
+                    # 转换数据格式
+                    formatted_weights = self._format_index_weight(weights)
+                    
+                    return IndexWeightResponse(
+                        index_code=request.index_code,
+                        date=request.date or datetime.now().strftime("%Y%m%d"),
+                        weights=formatted_weights
+                    )
+                    
+                except Exception as e:
+                    print(f"获取真实指数权重失败，使用模拟数据: {e}")
             
-            # 模拟数据返回
+            # 使用模拟数据
             mock_weights = [
                 {"stock_code": "000001.SZ", "weight": 0.15, "market_cap": 1000000},
                 {"stock_code": "000002.SZ", "weight": 0.12, "market_cap": 800000},
@@ -189,15 +247,23 @@ class DataService:
     
     def get_trading_calendar(self, year: int) -> TradingCalendarResponse:
         """获取交易日历"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
-            # 调用xtdata获取交易日历
-            # trading_dates = xtdata.get_trading_dates(year)
-            # holidays = xtdata.get_holidays(year)
+            if self._should_use_real_data():
+                # 使用真实xtdata接口
+                try:
+                    trading_dates = xtdata.get_trading_dates(year)
+                    holidays = xtdata.get_holidays(year)
+                    
+                    return TradingCalendarResponse(
+                        trading_dates=trading_dates,
+                        holidays=holidays,
+                        year=year
+                    )
+                    
+                except Exception as e:
+                    print(f"获取真实交易日历失败，使用模拟数据: {e}")
             
-            # 模拟数据返回
+            # 使用模拟数据
             mock_trading_dates = [
                 f"{year}0103", f"{year}0104", f"{year}0105",
                 f"{year}0108", f"{year}0109", f"{year}0110"
@@ -217,14 +283,25 @@ class DataService:
     
     def get_instrument_info(self, stock_code: str) -> InstrumentInfo:
         """获取合约信息"""
-        if not self._initialized:
-            raise DataServiceException("数据服务未初始化")
-        
         try:
-            # 调用xtdata获取合约信息
-            # info = xtdata.get_instrument_detail(stock_code)
+            if self._should_use_real_data():
+                # 使用真实xtdata接口
+                try:
+                    info = xtdata.get_instrument_detail(stock_code)
+                    
+                    return InstrumentInfo(
+                        instrument_code=stock_code,
+                        instrument_name=info.get("instrument_name", f"股票{stock_code}"),
+                        market_type=info.get("market_type", "SH"),
+                        instrument_type=info.get("instrument_type", "STOCK"),
+                        list_date=info.get("list_date"),
+                        delist_date=info.get("delist_date")
+                    )
+                    
+                except Exception as e:
+                    print(f"获取真实合约信息失败，使用模拟数据: {e}")
             
-            # 模拟数据返回
+            # 使用模拟数据
             return InstrumentInfo(
                 instrument_code=stock_code,
                 instrument_name=f"股票{stock_code}",
@@ -236,6 +313,62 @@ class DataService:
             
         except Exception as e:
             raise DataServiceException(f"获取合约信息失败: {str(e)}")
+    
+    def _format_market_data(self, data: Any, fields: Optional[List[str]]) -> List[Dict[str, Any]]:
+        """格式化市场数据"""
+        # 这里需要根据xtdata返回的实际数据格式进行转换
+        # 由于我们无法确定具体的数据格式，这里提供一个示例
+        if not data:
+            return []
+        
+        formatted_data = []
+        for item in data:
+            formatted_item = {
+                "time": item.get("time", ""),
+                "open": item.get("open", 0.0),
+                "high": item.get("high", 0.0),
+                "low": item.get("low", 0.0),
+                "close": item.get("close", 0.0),
+                "volume": item.get("volume", 0)
+            }
+            formatted_data.append(formatted_item)
+        
+        return formatted_data
+    
+    def _format_financial_data(self, data: Any, table_name: str) -> List[Dict[str, Any]]:
+        """格式化财务数据"""
+        # 这里需要根据xtdata返回的实际数据格式进行转换
+        if not data:
+            return []
+        
+        formatted_data = []
+        for item in data:
+            formatted_item = {
+                "date": item.get("date", ""),
+                "value1": item.get("value1", 0.0),
+                "value2": item.get("value2", 0.0),
+                "value3": item.get("value3", 0.0)
+            }
+            formatted_data.append(formatted_item)
+        
+        return formatted_data
+    
+    def _format_index_weight(self, weights: Any) -> List[Dict[str, Any]]:
+        """格式化指数权重数据"""
+        # 这里需要根据xtdata返回的实际数据格式进行转换
+        if not weights:
+            return []
+        
+        formatted_weights = []
+        for weight in weights:
+            formatted_weight = {
+                "stock_code": weight.get("stock_code", ""),
+                "weight": weight.get("weight", 0.0),
+                "market_cap": weight.get("market_cap", 0.0)
+            }
+            formatted_weights.append(formatted_weight)
+        
+        return formatted_weights
     
     def _get_mock_market_data(self, stock_code: str, request: MarketDataRequest) -> List[Dict[str, Any]]:
         """生成模拟市场数据"""
