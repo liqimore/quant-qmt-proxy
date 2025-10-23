@@ -69,16 +69,45 @@ def serialize_data(data: Any) -> Any:
 
 
 def validate_stock_code(stock_code: str) -> bool:
-    """验证股票代码格式"""
+    """验证股票代码格式
+    支持格式:
+    - A股: 000001.SZ, 600000.SH
+    - 港股: 00700.HK
+    - 期货等其他格式
+    """
     if not stock_code or not isinstance(stock_code, str):
         return False
     
-    # 基本格式验证（可根据实际需求调整）
     stock_code = stock_code.strip().upper()
-    if len(stock_code) < 4 or len(stock_code) > 8:
-        return False
     
-    return True
+    # 检查是否包含市场后缀
+    if '.' in stock_code:
+        parts = stock_code.split('.')
+        if len(parts) != 2:
+            return False
+        code, market = parts
+        
+        # 验证代码部分是否为数字
+        if not code.isdigit():
+            return False
+        
+        # 验证市场代码
+        valid_markets = ['SH', 'SZ', 'BJ', 'HK', 'US']  # 上海、深圳、北京、香港、美国
+        if market not in valid_markets:
+            return False
+        
+        # A股代码应该是6位数字
+        if market in ['SH', 'SZ', 'BJ'] and len(code) != 6:
+            return False
+        
+        return True
+    else:
+        # 没有市场后缀，只检查是否为数字且长度合理
+        if not stock_code.isdigit():
+            return False
+        if len(stock_code) < 4 or len(stock_code) > 8:
+            return False
+        return True
 
 
 def validate_date_range(start_date: str, end_date: str) -> bool:

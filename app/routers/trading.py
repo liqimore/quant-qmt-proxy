@@ -11,7 +11,7 @@ from app.models.trading_models import (
 )
 from app.utils.helpers import format_response
 from app.utils.exceptions import TradingServiceException, handle_xtquant_exception
-from app.dependencies import verify_api_key
+from app.dependencies import verify_api_key, get_trading_service
 from app.config import get_settings, Settings
 
 router = APIRouter(prefix="/api/v1/trading", tags=["交易服务"])
@@ -21,11 +21,10 @@ router = APIRouter(prefix="/api/v1/trading", tags=["交易服务"])
 async def connect_account(
     request: ConnectRequest,
     api_key: str = Depends(verify_api_key),
-    settings: Settings = Depends(get_settings)
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """连接交易账户"""
     try:
-        trading_service = TradingService(settings)
         result = trading_service.connect_account(request)
         return result
     except TradingServiceException as e:
@@ -41,11 +40,10 @@ async def connect_account(
 async def disconnect_account(
     session_id: str,
     api_key: str = Depends(verify_api_key),
-    settings: Settings = Depends(get_settings)
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """断开交易账户"""
     try:
-        trading_service = TradingService(settings)
         success = trading_service.disconnect_account(session_id)
         return format_response(
             data={"success": success},
@@ -63,11 +61,11 @@ async def disconnect_account(
 @router.get("/account/{session_id}", response_model=AccountInfo)
 async def get_account_info(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取账户信息"""
     try:
-        trading_service = TradingService()
         result = trading_service.get_account_info(session_id)
         return result
     except TradingServiceException as e:
@@ -82,11 +80,11 @@ async def get_account_info(
 @router.get("/positions/{session_id}", response_model=List[PositionInfo])
 async def get_positions(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取持仓信息"""
     try:
-        trading_service = TradingService()
         results = trading_service.get_positions(session_id)
         return results
     except TradingServiceException as e:
@@ -102,11 +100,11 @@ async def get_positions(
 async def submit_order(
     session_id: str,
     request: OrderRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """提交订单"""
     try:
-        trading_service = TradingService()
         result = trading_service.submit_order(session_id, request)
         return result
     except TradingServiceException as e:
@@ -122,11 +120,11 @@ async def submit_order(
 async def cancel_order(
     session_id: str,
     request: CancelOrderRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """撤销订单"""
     try:
-        trading_service = TradingService()
         success = trading_service.cancel_order(session_id, request)
         return format_response(
             data={"success": success},
@@ -144,11 +142,11 @@ async def cancel_order(
 @router.get("/orders/{session_id}", response_model=List[OrderResponse])
 async def get_orders(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取订单列表"""
     try:
-        trading_service = TradingService()
         results = trading_service.get_orders(session_id)
         return results
     except TradingServiceException as e:
@@ -163,11 +161,11 @@ async def get_orders(
 @router.get("/trades/{session_id}", response_model=List[TradeInfo])
 async def get_trades(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取成交记录"""
     try:
-        trading_service = TradingService()
         results = trading_service.get_trades(session_id)
         return results
     except TradingServiceException as e:
@@ -182,11 +180,11 @@ async def get_trades(
 @router.get("/asset/{session_id}", response_model=AssetInfo)
 async def get_asset_info(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取资产信息"""
     try:
-        trading_service = TradingService()
         result = trading_service.get_asset_info(session_id)
         return result
     except TradingServiceException as e:
@@ -201,11 +199,11 @@ async def get_asset_info(
 @router.get("/risk/{session_id}", response_model=RiskInfo)
 async def get_risk_info(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取风险信息"""
     try:
-        trading_service = TradingService()
         result = trading_service.get_risk_info(session_id)
         return result
     except TradingServiceException as e:
@@ -220,11 +218,11 @@ async def get_risk_info(
 @router.get("/strategies/{session_id}", response_model=List[StrategyInfo])
 async def get_strategies(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取策略列表"""
     try:
-        trading_service = TradingService()
         results = trading_service.get_strategies(session_id)
         return results
     except TradingServiceException as e:
@@ -239,11 +237,11 @@ async def get_strategies(
 @router.get("/status/{session_id}")
 async def get_connection_status(
     session_id: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    trading_service: TradingService = Depends(get_trading_service)
 ):
     """获取连接状态"""
     try:
-        trading_service = TradingService()
         is_connected = trading_service.is_connected(session_id)
         return format_response(
             data={"connected": is_connected},

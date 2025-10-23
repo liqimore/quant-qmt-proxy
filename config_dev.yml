@@ -18,12 +18,13 @@ xtquant:
   # mock: 使用模拟数据
   # real: 使用真实xtquant接口
   # dev: 开发模式，使用真实接口但不下单
-  mode: "mock"
+  mode: "dev"
   
   # 数据配置
   data:
     path: "./data"
     config_path: "./xtquant/config"
+    qmt_userdata_path: "C:/quant/国金QMT交易端模拟/userdata_mini"
   
   # 交易配置
   trading:

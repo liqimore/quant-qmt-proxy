@@ -35,6 +35,7 @@ class XTQuantDataConfig(BaseModel):
     """xtquant数据配置"""
     path: str = "./data"
     config_path: str = "./xtquant/config"
+    qmt_userdata_path: Optional[str] = None  # QMT客户端的userdata_mini路径
 
 
 class XTQuantTradingConfig(BaseModel):

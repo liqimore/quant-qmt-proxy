@@ -18,6 +18,35 @@ from app.utils.exceptions import AuthenticationException
 security = HTTPBearer(auto_error=False)
 
 
+# 全局服务实例（单例模式）
+_data_service_instance = None
+_trading_service_instance = None
+
+
+def get_data_service(settings: Settings = Depends(get_settings)):
+    """获取DataService单例实例"""
+    global _data_service_instance
+    
+    if _data_service_instance is None:
+        from app.services.data_service import DataService
+        print("🔧 首次创建DataService实例")
+        _data_service_instance = DataService(settings)
+    
+    return _data_service_instance
+
+
+def get_trading_service(settings: Settings = Depends(get_settings)):
+    """获取TradingService单例实例"""
+    global _trading_service_instance
+    
+    if _trading_service_instance is None:
+        from app.services.trading_service import TradingService
+        print("🔧 首次创建TradingService实例")
+        _trading_service_instance = TradingService(settings)
+    
+    return _trading_service_instance
+
+
 async def get_api_key(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     settings: Settings = Depends(get_settings)

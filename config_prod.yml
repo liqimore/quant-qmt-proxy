@@ -21,6 +21,7 @@ xtquant:
   data:
     path: "./data"
     config_path: "./xtquant/config"
+    qmt_userdata_path: "C:/quant/国金QMT交易端模拟/userdata_mini"
   
   # 交易配置
   trading:
