@@ -80,36 +80,63 @@ class DataService:
                 print(f"📁 设置数据路径: {qmt_data_dir}")
                 print(f"   路径存在: {os.path.exists(qmt_data_dir)}")
             
-            # 初始化xtdata
-            print(f"🔌 正在连接xtquant服务...")
-            xtdata.enable_hello = True  # 显示连接信息
-            client = xtdata.connect()
+            # 初始化xtdata（添加超时保护）
+            print(f"🔌 正在连接xtquant服务（可能需要几秒钟）...")
+            xtdata.enable_hello = False  # 禁用hello信息，减少输出
             
-            if client and client.is_connected():
+            import threading
+            import time
+            
+            connect_result = {'client': None, 'error': None}
+            
+            def try_connect():
+                try:
+                    connect_result['client'] = xtdata.connect()
+                except Exception as e:
+                    connect_result['error'] = e
+            
+            # 在后台线程中尝试连接，避免阻塞主线程
+            connect_thread = threading.Thread(target=try_connect, daemon=True)
+            connect_thread.start()
+            connect_thread.join(timeout=5.0)  # 最多等待5秒
+            
+            if connect_result['error']:
+                raise connect_result['error']
+            
+            client = connect_result['client']
+            
+            if client and hasattr(client, 'is_connected') and client.is_connected():
                 self._initialized = True
                 actual_data_dir = xtdata.get_data_dir()
                 print(f"✅ xtdata连接成功！")
                 print(f"   模式: {self.settings.xtquant.mode.value}")
                 print(f"   实际数据路径: {actual_data_dir}")
                 print(f"   客户端状态: 已连接")
+            elif connect_thread.is_alive():
+                print(f"⚠️  xtdata连接超时（5秒），继续使用模拟数据")
+                print(f"   提示: 请检查QMT客户端是否正在运行")
+                self._initialized = False
             else:
                 print(f"❌ xtdata连接失败：客户端未连接")
                 self._initialized = False
                 
+        except KeyboardInterrupt:
+            print(f"\n⚠️  用户中断连接")
+            self._initialized = False
+            raise
         except Exception as e:
             print(f"❌ xtdata初始化失败: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"   将使用模拟数据模式")
             self._initialized = False
         
         print("=" * 70 + "\n")
     
     def _should_use_real_data(self) -> bool:
-        """判断是否使用真实数据"""
+        """判断是否使用真实数据（dev和prod模式都连接xtquant）"""
         return (
             XTQUANT_AVAILABLE and 
             self._initialized and 
-            self.settings.xtquant.mode in [XTQuantMode.REAL, XTQuantMode.DEV]
+            self.settings.xtquant.mode in [XTQuantMode.DEV, XTQuantMode.PROD]
         )
     
     def get_market_data(self, request: MarketDataRequest) -> List[MarketDataResponse]:

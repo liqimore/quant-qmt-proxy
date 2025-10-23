@@ -72,20 +72,26 @@ class TradingService:
             self._initialized = False
     
     def _should_use_real_trading(self) -> bool:
-        """判断是否使用真实交易"""
+        """
+        判断是否使用真实交易
+        只有在 prod 模式且配置允许时才允许真实交易
+        """
         return (
             XTQUANT_AVAILABLE and 
             self._initialized and 
-            self.settings.xtquant.mode == XTQuantMode.REAL and
+            self.settings.xtquant.mode == XTQuantMode.PROD and
             self.settings.xtquant.trading.allow_real_trading
         )
     
     def _should_use_real_data(self) -> bool:
-        """判断是否使用真实数据（但不交易）"""
+        """
+        判断是否连接xtquant获取真实数据（但不一定允许交易）
+        dev 和 prod 模式都连接 xtquant
+        """
         return (
             XTQUANT_AVAILABLE and 
             self._initialized and 
-            self.settings.xtquant.mode in [XTQuantMode.REAL, XTQuantMode.DEV]
+            self.settings.xtquant.mode in [XTQuantMode.DEV, XTQuantMode.PROD]
         )
     
     def connect_account(self, request: ConnectRequest) -> ConnectResponse:
@@ -194,19 +200,22 @@ class TradingService:
             if not validate_stock_code(request.stock_code):
                 raise TradingServiceException(f"无效的股票代码: {request.stock_code}")
             
-            # 调用xttrader提交订单
-            # order_id = xttrader.order_stock(
-            #     session_id,
-            #     request.stock_code,
-            #     request.side.value,
-            #     request.volume,
-            #     request.price,
-            #     request.order_type.value
-            # )
+            # 🔒 关键拦截点：检查是否允许真实交易
+            if not self._should_use_real_trading():
+                print(f"⚠️  当前模式[{self.settings.xtquant.mode.value}]不允许真实交易，返回模拟订单")
+                return self._get_mock_order_response(request)
             
-            # 模拟订单提交
-            order_id = f"order_{self._order_counter}"
-            self._order_counter += 1
+            # ✅ 允许真实交易，调用xttrader提交订单
+            print(f"📊 真实交易模式：提交订单 {request.stock_code} {request.side.value} {request.volume}股")
+            
+            order_id = xttrader.order_stock(
+                session_id,
+                request.stock_code,
+                request.side.value,
+                request.volume,
+                request.price,
+                request.order_type.value
+            )
             
             order_response = OrderResponse(
                 order_id=order_id,
@@ -226,6 +235,25 @@ class TradingService:
         except Exception as e:
             raise TradingServiceException(f"提交订单失败: {str(e)}")
     
+    def _get_mock_order_response(self, request: OrderRequest) -> OrderResponse:
+        """生成模拟订单响应"""
+        order_id = f"mock_order_{self._order_counter}"
+        self._order_counter += 1
+        
+        order_response = OrderResponse(
+            order_id=order_id,
+            stock_code=request.stock_code,
+            side=request.side.value,
+            order_type=request.order_type.value,
+            volume=request.volume,
+            price=request.price,
+            status=OrderStatus.SUBMITTED.value,
+            submitted_time=datetime.now()
+        )
+        
+        self._orders[order_id] = order_response
+        return order_response
+    
     def cancel_order(self, session_id: str, request: CancelOrderRequest) -> bool:
         """撤销订单"""
         if session_id not in self._connected_accounts:
@@ -235,15 +263,23 @@ class TradingService:
             if request.order_id not in self._orders:
                 raise TradingServiceException("订单不存在")
             
-            # 调用xttrader撤销订单
-            # success = xttrader.cancel_order_stock(session_id, request.order_id)
+            # 🔒 关键拦截点：检查是否允许真实交易
+            if not self._should_use_real_trading():
+                print(f"⚠️  当前模式[{self.settings.xtquant.mode.value}]不允许真实交易，返回模拟撤单结果")
+                # 模拟撤单成功
+                if request.order_id in self._orders:
+                    self._orders[request.order_id].status = OrderStatus.CANCELLED.value
+                    return True
+                return False
             
-            # 模拟撤单成功
-            if request.order_id in self._orders:
+            # ✅ 允许真实交易，调用xttrader撤销订单
+            print(f"📊 真实交易模式：撤销订单 {request.order_id}")
+            success = xttrader.cancel_order_stock(session_id, request.order_id)
+            
+            if success and request.order_id in self._orders:
                 self._orders[request.order_id].status = OrderStatus.CANCELLED.value
-                return True
             
-            return False
+            return success
             
         except Exception as e:
             raise TradingServiceException(f"撤销订单失败: {str(e)}")
