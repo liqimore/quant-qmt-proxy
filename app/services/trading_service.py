@@ -255,32 +255,27 @@ class TradingService:
         return order_response
     
     def cancel_order(self, session_id: str, request: CancelOrderRequest) -> bool:
-        """撤销订单"""
+        """撤销订单（dev/mock模式下总是拦截并返回True）"""
         if session_id not in self._connected_accounts:
             raise TradingServiceException("账户未连接")
         
+        # dev/mock模式下直接拦截，始终返回True
+        if not self._should_use_real_trading():
+            print(f"⚠️  当前模式[{self.settings.xtquant.mode.value}]不允许真实交易，撤单请求已拦截，直接返回True")
+            # 如果有订单，标记为已撤销
+            if request.order_id in self._orders:
+                self._orders[request.order_id].status = OrderStatus.CANCELLED.value
+            return True
+        
+        # prod模式下才做真实撤单校验
         try:
             if request.order_id not in self._orders:
                 raise TradingServiceException("订单不存在")
-            
-            # 🔒 关键拦截点：检查是否允许真实交易
-            if not self._should_use_real_trading():
-                print(f"⚠️  当前模式[{self.settings.xtquant.mode.value}]不允许真实交易，返回模拟撤单结果")
-                # 模拟撤单成功
-                if request.order_id in self._orders:
-                    self._orders[request.order_id].status = OrderStatus.CANCELLED.value
-                    return True
-                return False
-            
-            # ✅ 允许真实交易，调用xttrader撤销订单
             print(f"📊 真实交易模式：撤销订单 {request.order_id}")
             success = xttrader.cancel_order_stock(session_id, request.order_id)
-            
             if success and request.order_id in self._orders:
                 self._orders[request.order_id].status = OrderStatus.CANCELLED.value
-            
             return success
-            
         except Exception as e:
             raise TradingServiceException(f"撤销订单失败: {str(e)}")
     
