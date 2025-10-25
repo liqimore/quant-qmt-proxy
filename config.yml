@@ -1,0 +1,87 @@
+# xtquant-proxy 配置文件
+# 使用环境变量 APP_MODE 切换模式: mock, dev, prod
+# 例如: set APP_MODE=dev (Windows) 或 export APP_MODE=dev (Linux/Mac)
+
+app:
+  name: "xtquant-proxy"
+  version: "1.0.0"
+
+# 日志配置
+logging:
+  level: "DEBUG"
+  file: "logs/app.log"
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+
+# xtquant配置
+xtquant:
+  # QMT安装路径
+  qmt_userdata_path: "C:/quant/国金QMT交易端模拟/userdata_mini"
+  
+  # 数据路径配置
+  data:
+    path: "./data"
+    config_path: "./xtquant/config"
+
+# 模式配置 (通过环境变量 APP_MODE 选择: mock, dev, prod)
+modes:
+  # mock模式: 不连接xtquant，使用模拟数据，不允许交易
+  mock:
+    debug: true
+    host: "0.0.0.0"
+    port: 8000
+    log_level: "DEBUG"
+    xtquant_mode: "mock"
+    allow_real_trading: false
+    connect_xtquant: false
+    api_keys:
+      - "mock-api-key-001"
+      - "mock-api-key-002"
+    database:
+      url: "sqlite:///./app_mock.db"
+    redis:
+      url: "redis://localhost:6379/0"
+    cors:
+      allow_origins: ["*"]
+  
+  # dev模式: 连接xtquant，获取真实数据，不允许交易
+  dev:
+    debug: true
+    host: "0.0.0.0"
+    port: 8000
+    log_level: "DEBUG"
+    xtquant_mode: "dev"
+    allow_real_trading: false
+    connect_xtquant: true
+    api_keys:
+      - "dev-api-key-001"
+      - "dev-api-key-002"
+    database:
+      url: "sqlite:///./app_dev.db"
+    redis:
+      url: "redis://localhost:6379/1"
+    cors:
+      allow_origins: ["*"]
+  
+  # prod模式: 连接xtquant，获取真实数据，允许真实交易
+  prod:
+    debug: false
+    host: "0.0.0.0"
+    port: 8000
+    log_level: "INFO"
+    xtquant_mode: "prod"
+    allow_real_trading: true
+    connect_xtquant: true
+    api_keys:
+      - "prod-api-key-001"
+      - "prod-api-key-002"
+    database:
+      url: "postgresql://user:password@localhost:5432/xtquant_proxy"
+    redis:
+      url: "redis://localhost:6379/0"
+    cors:
+      allow_origins: ["https://yourdomain.com"]
+
+# 安全配置
+security:
+  secret_key: "change-this-to-secure-key-in-production"
+  api_key_header: "X-API-Key"

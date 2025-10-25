@@ -12,7 +12,8 @@ from app.models.data_models import (
 )
 from app.utils.helpers import format_response
 from app.utils.exceptions import DataServiceException, handle_xtquant_exception
-from app.dependencies import verify_api_key
+from app.dependencies import verify_api_key, get_data_service
+from app.config import get_settings, Settings
 
 router = APIRouter(prefix="/api/v1/data", tags=["数据服务"])
 
@@ -20,11 +21,11 @@ router = APIRouter(prefix="/api/v1/data", tags=["数据服务"])
 @router.post("/market", response_model=List[MarketDataResponse])
 async def get_market_data(
     request: MarketDataRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取市场数据"""
     try:
-        data_service = DataService()
         results = data_service.get_market_data(request)
         return results
     except DataServiceException as e:
@@ -39,11 +40,11 @@ async def get_market_data(
 @router.post("/financial", response_model=List[FinancialDataResponse])
 async def get_financial_data(
     request: FinancialDataRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取财务数据"""
     try:
-        data_service = DataService()
         results = data_service.get_financial_data(request)
         return results
     except DataServiceException as e:
@@ -56,10 +57,12 @@ async def get_financial_data(
 
 
 @router.get("/sectors", response_model=List[SectorResponse])
-async def get_sector_list(api_key: str = Depends(verify_api_key)):
+async def get_sector_list(
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
+):
     """获取板块列表"""
     try:
-        data_service = DataService()
         results = data_service.get_sector_list()
         return results
     except DataServiceException as e:
@@ -74,11 +77,11 @@ async def get_sector_list(api_key: str = Depends(verify_api_key)):
 @router.post("/sector")
 async def get_sector_stocks(
     request: SectorRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取板块内股票列表"""
     try:
-        data_service = DataService()
         # 这里可以添加获取特定板块股票的逻辑
         return format_response(
             data={"sector_name": request.sector_name, "stock_list": []},
@@ -96,11 +99,11 @@ async def get_sector_stocks(
 @router.post("/index-weight", response_model=IndexWeightResponse)
 async def get_index_weight(
     request: IndexWeightRequest,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取指数权重"""
     try:
-        data_service = DataService()
         result = data_service.get_index_weight(request)
         return result
     except DataServiceException as e:
@@ -115,11 +118,11 @@ async def get_index_weight(
 @router.get("/trading-calendar/{year}", response_model=TradingCalendarResponse)
 async def get_trading_calendar(
     year: int,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取交易日历"""
     try:
-        data_service = DataService()
         result = data_service.get_trading_calendar(year)
         return result
     except DataServiceException as e:
@@ -134,11 +137,11 @@ async def get_trading_calendar(
 @router.get("/instrument/{stock_code}", response_model=InstrumentInfo)
 async def get_instrument_info(
     stock_code: str,
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
+    data_service: DataService = Depends(get_data_service)
 ):
     """获取合约信息"""
     try:
-        data_service = DataService()
         result = data_service.get_instrument_info(stock_code)
         return result
     except DataServiceException as e:

@@ -22,11 +22,12 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
     settings = get_settings()
-    setup_logging(settings.log_level, settings.log_file)
+    setup_logging(settings.logging.level, settings.logging.file)
     
-    print(f"启动 {settings.app_name} v{settings.app_version}")
-    print(f"调试模式: {settings.debug}")
-    print(f"服务地址: http://{settings.host}:{settings.port}")
+    print(f"启动 {settings.app.name} v{settings.app.version}")
+    print(f"调试模式: {settings.app.debug}")
+    print(f"xtquant模式: {settings.xtquant.mode.value}")
+    print(f"服务地址: http://{settings.app.host}:{settings.app.port}")
     
     yield
     
@@ -107,8 +108,9 @@ async def root():
     settings = get_settings()
     return format_response(
         data={
-            "app_name": settings.app_name,
-            "app_version": settings.app_version,
+            "app_name": settings.app.name,
+            "app_version": settings.app.version,
+            "xtquant_mode": settings.xtquant.mode.value,
             "description": "基于xtquant的量化交易代理服务",
             "docs_url": "/docs",
             "redoc_url": "/redoc"
@@ -123,12 +125,14 @@ async def app_info():
     settings = get_settings()
     return format_response(
         data={
-            "name": settings.app_name,
-            "version": settings.app_version,
-            "debug": settings.debug,
-            "host": settings.host,
-            "port": settings.port,
-            "log_level": settings.log_level
+            "name": settings.app.name,
+            "version": settings.app.version,
+            "debug": settings.app.debug,
+            "host": settings.app.host,
+            "port": settings.app.port,
+            "log_level": settings.logging.level,
+            "xtquant_mode": settings.xtquant.mode.value,
+            "allow_real_trading": settings.xtquant.trading.allow_real_trading
         },
         message="应用信息获取成功"
     )
@@ -140,8 +144,8 @@ if __name__ == "__main__":
     
     uvicorn.run(
         "app.main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug,
-        log_level=settings.log_level.lower()
+        host=settings.app.host,
+        port=settings.app.port,
+        reload=settings.app.debug,
+        log_level=settings.logging.level.lower()
     )
