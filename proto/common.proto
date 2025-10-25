@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package qmt.common;
+
+// 时间戳
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// 日期 (YYYYMMDD)
+message Date {
+  string value = 1;  // "20240101"
+}
+
+// 市场类型
+enum MarketType {
+  MARKET_TYPE_UNSPECIFIED = 0;
+  MARKET_TYPE_SHANGHAI = 1;   // 上交所
+  MARKET_TYPE_SHENZHEN = 2;   // 深交所
+  MARKET_TYPE_BEIJING = 3;    // 北交所
+  MARKET_TYPE_FUTURES = 4;    // 期货
+  MARKET_TYPE_OPTION = 5;     // 期权
+}
+
+// 周期类型
+enum PeriodType {
+  PERIOD_TYPE_UNSPECIFIED = 0;
+  PERIOD_TYPE_TICK = 1;
+  PERIOD_TYPE_1M = 2;
+  PERIOD_TYPE_5M = 3;
+  PERIOD_TYPE_15M = 4;
+  PERIOD_TYPE_30M = 5;
+  PERIOD_TYPE_1H = 6;
+  PERIOD_TYPE_1D = 7;
+  PERIOD_TYPE_1W = 8;
+  PERIOD_TYPE_1MON = 9;
+}
+
+// 通用响应状态
+message Status {
+  int32 code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}

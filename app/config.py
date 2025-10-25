@@ -89,6 +89,13 @@ class Settings(BaseModel):
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     cors: CORSConfig = Field(default_factory=CORSConfig)
+    
+    # gRPC 配置（使用属性访问以保持向后兼容）
+    grpc_enabled: bool = True
+    grpc_host: str = "0.0.0.0"
+    grpc_port: int = 50051
+    grpc_max_workers: int = 10
+    grpc_max_message_length: int = 50 * 1024 * 1024  # 50MB
 
 
 def load_config(config_file: Optional[str] = None) -> Settings:

@@ -7,3 +7,9 @@ python-dotenv==1.0.0
 httpx==0.25.2
 loguru==0.7.2
 PyYAML==6.0.1
+
+# gRPC 相关
+grpcio==1.60.0
+grpcio-tools==1.60.0
+protobuf==4.25.1
+grpcio-reflection==1.60.0

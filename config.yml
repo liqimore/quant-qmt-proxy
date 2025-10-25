@@ -12,6 +12,14 @@ logging:
   file: "logs/app.log"
   format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
 
+# gRPC 配置
+grpc:
+  enabled: true
+  host: "0.0.0.0"
+  port: 50051
+  max_workers: 10
+  max_message_length: 52428800  # 50MB
+
 # xtquant配置
 xtquant:
   # QMT安装路径

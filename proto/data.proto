@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+package qmt.data;
+
+import "common.proto";
+import "google/protobuf/empty.proto";
+
+// ==================== 市场数据 ====================
+
+// 市场数据请求
+message MarketDataRequest {
+  repeated string stock_codes = 1;    // 股票代码列表
+  string start_date = 2;              // YYYYMMDD
+  string end_date = 3;                // YYYYMMDD
+  common.PeriodType period = 4;       // 周期类型
+  repeated string fields = 5;         // 字段列表 ["open", "close", ...]
+  string adjust_type = 6;             // 复权类型 "none", "front", "back"
+}
+
+// K线数据点
+message KlineBar {
+  string time = 1;         // 时间戳或日期
+  double open = 2;         // 开盘价
+  double high = 3;         // 最高价
+  double low = 4;          // 最低价
+  double close = 5;        // 收盘价
+  int64 volume = 6;        // 成交量
+  double amount = 7;       // 成交额
+}
+
+// 市场数据响应
+message MarketDataResponse {
+  string stock_code = 1;
+  repeated KlineBar bars = 2;
+  repeated string fields = 3;
+  string period = 4;
+  string start_date = 5;
+  string end_date = 6;
+  common.Status status = 7;
+}
+
+// 批量市场数据响应
+message MarketDataBatchResponse {
+  repeated MarketDataResponse data = 1;
+  common.Status status = 2;
+}
+
+// ==================== 财务数据 ====================
+
+// 财务数据请求
+message FinancialDataRequest {
+  repeated string stock_codes = 1;
+  repeated string table_list = 2;    // 财务表列表
+  string start_date = 3;
+  string end_date = 4;
+}
+
+// 财务数据行
+message FinancialDataRow {
+  map<string, string> fields = 1;    // 动态字段映射
+}
+
+// 财务数据响应
+message FinancialDataResponse {
+  string stock_code = 1;
+  string table_name = 2;
+  repeated FinancialDataRow rows = 3;
+  repeated string columns = 4;
+  common.Status status = 5;
+}
+
+// 批量财务数据响应
+message FinancialDataBatchResponse {
+  repeated FinancialDataResponse data = 1;
+  common.Status status = 2;
+}
+
+// ==================== 板块数据 ====================
+
+// 板块信息
+message SectorInfo {
+  string sector_name = 1;
+  repeated string stock_list = 2;
+  string sector_type = 3;
+}
+
+// 板块列表响应
+message SectorListResponse {
+  repeated SectorInfo sectors = 1;
+  common.Status status = 2;
+}
+
+// ==================== 指数权重 ====================
+
+// 指数权重请求
+message IndexWeightRequest {
+  string index_code = 1;
+  string date = 2;  // 可选
+}
+
+// 成分股权重
+message ComponentWeight {
+  string stock_code = 1;
+  double weight = 2;
+  double market_cap = 3;
+}
+
+// 指数权重响应
+message IndexWeightResponse {
+  string index_code = 1;
+  string date = 2;
+  repeated ComponentWeight weights = 3;
+  common.Status status = 4;
+}
+
+// ==================== 交易日历 ====================
+
+// 交易日历请求
+message TradingCalendarRequest {
+  int32 year = 1;
+}
+
+// 交易日历响应
+message TradingCalendarResponse {
+  repeated string trading_dates = 1;
+  repeated string holidays = 2;
+  int32 year = 3;
+  common.Status status = 4;
+}
+
+// ==================== 合约信息 ====================
+
+// 合约信息请求
+message InstrumentInfoRequest {
+  string stock_code = 1;
+}
+
+// 合约信息响应
+message InstrumentInfoResponse {
+  string instrument_code = 1;
+  string instrument_name = 2;
+  string market_type = 3;
+  string instrument_type = 4;
+  string list_date = 5;
+  string delist_date = 6;
+  common.Status status = 7;
+}
+
+// ==================== ETF信息 ====================
+
+// ETF信息请求
+message ETFInfoRequest {
+  string etf_code = 1;
+}
+
+// ETF信息响应
+message ETFInfoResponse {
+  string etf_code = 1;
+  string etf_name = 2;
+  string underlying_asset = 3;
+  int64 creation_unit = 4;
+  int64 redemption_unit = 5;
+  common.Status status = 6;
+}
+
+// ==================== 数据服务定义 ====================
+
+service DataService {
+  // 获取市场数据（一元调用）
+  rpc GetMarketData(MarketDataRequest) returns (MarketDataBatchResponse);
+  
+  // 获取财务数据（一元调用）
+  rpc GetFinancialData(FinancialDataRequest) returns (FinancialDataBatchResponse);
+  
+  // 获取板块列表（一元调用）
+  rpc GetSectorList(google.protobuf.Empty) returns (SectorListResponse);
+  
+  // 获取指数权重（一元调用）
+  rpc GetIndexWeight(IndexWeightRequest) returns (IndexWeightResponse);
+  
+  // 获取交易日历（一元调用）
+  rpc GetTradingCalendar(TradingCalendarRequest) returns (TradingCalendarResponse);
+  
+  // 获取合约信息（一元调用）
+  rpc GetInstrumentInfo(InstrumentInfoRequest) returns (InstrumentInfoResponse);
+  
+  // 获取ETF信息（一元调用）
+  rpc GetETFInfo(ETFInfoRequest) returns (ETFInfoResponse);
+}

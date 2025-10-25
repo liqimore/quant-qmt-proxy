@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package qmt.health;
+
+// 健康检查请求
+message HealthCheckRequest {
+  string service = 1;
+}
+
+// 健康检查响应
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}
+
+// 健康检查服务
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
