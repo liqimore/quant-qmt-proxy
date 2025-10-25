@@ -10,8 +10,6 @@ from generated import data_pb2_grpc, trading_pb2_grpc, health_pb2_grpc
 from app.grpc_services.data_grpc_service import DataGrpcService
 from app.grpc_services.trading_grpc_service import TradingGrpcService
 from app.grpc_services.health_grpc_service import HealthGrpcService
-from app.services.data_service import DataService
-from app.services.trading_service import TradingService
 from app.config import get_settings
 
 
@@ -21,7 +19,7 @@ def serve():
     
     # 配置日志
     logging.basicConfig(
-        level=logging.INFO,
+        level=getattr(logging, settings.logging.level.upper()),
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     logger = logging.getLogger(__name__)
@@ -42,13 +40,12 @@ def serve():
         ]
     )
     
-    # 创建服务实例
-    logger.info("正在初始化服务...")
-    data_service = DataService(settings)
-    trading_service = TradingService(settings)
+    # 使用依赖注入中的单例服务实例
+    from app.dependencies import get_data_service, get_trading_service
+    data_service = get_data_service(settings)
+    trading_service = get_trading_service(settings)
     
     # 注册服务
-    logger.info("正在注册 gRPC 服务...")
     data_pb2_grpc.add_DataServiceServicer_to_server(
         DataGrpcService(data_service), 
         server
@@ -68,19 +65,14 @@ def serve():
     
     # 启动服务器
     server.start()
-    logger.info(f"=" * 70)
-    logger.info(f"🚀 gRPC 服务器已启动")
-    logger.info(f"   地址: {server_address}")
-    logger.info(f"   工作线程: {max_workers}")
-    logger.info(f"   模式: {settings.xtquant.mode.value}")
-    logger.info(f"=" * 70)
+    print(f"✓ gRPC 服务已就绪 (工作线程: {max_workers})")
     
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
-        logger.info("\n正在关闭 gRPC 服务器...")
+        print("\n✓ gRPC 服务正在关闭...")
         server.stop(grace=5)
-        logger.info("gRPC 服务器已关闭")
+        print("✓ gRPC 服务已关闭")
 
 
 if __name__ == '__main__':

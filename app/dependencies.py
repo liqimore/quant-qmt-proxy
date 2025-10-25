@@ -29,7 +29,7 @@ def get_data_service(settings: Settings = Depends(get_settings)):
     
     if _data_service_instance is None:
         from app.services.data_service import DataService
-        print("🔧 首次创建DataService实例")
+        print("  • 初始化 DataService...")
         _data_service_instance = DataService(settings)
     
     return _data_service_instance
@@ -41,7 +41,7 @@ def get_trading_service(settings: Settings = Depends(get_settings)):
     
     if _trading_service_instance is None:
         from app.services.trading_service import TradingService
-        print("🔧 首次创建TradingService实例")
+        print("  • 初始化 TradingService...")
         _trading_service_instance = TradingService(settings)
     
     return _trading_service_instance

@@ -24,15 +24,12 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     setup_logging(settings.logging.level, settings.logging.file)
     
-    print(f"启动 {settings.app.name} v{settings.app.version}")
-    print(f"调试模式: {settings.app.debug}")
-    print(f"xtquant模式: {settings.xtquant.mode.value}")
-    print(f"服务地址: http://{settings.app.host}:{settings.app.port}")
+    print("✓ REST API 服务已就绪")
     
     yield
     
     # 关闭时执行
-    print("应用正在关闭...")
+    print("✓ REST API 服务正在关闭...")
 
 
 # 创建FastAPI应用

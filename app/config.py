@@ -108,7 +108,6 @@ def load_config(config_file: Optional[str] = None) -> Settings:
         config_file = "config.yml"
     
     if not os.path.exists(config_file):
-        print(f"⚠️  配置文件 {config_file} 不存在，使用默认配置")
         return Settings()
     
     try:
@@ -119,17 +118,13 @@ def load_config(config_file: Optional[str] = None) -> Settings:
         app_mode = os.getenv("APP_MODE", "dev").lower()
         
         if app_mode not in ["mock", "dev", "prod"]:
-            print(f"⚠️  无效的 APP_MODE: {app_mode}，使用默认值 dev")
             app_mode = "dev"
-        
-        print(f"🚀 加载配置，运行模式: {app_mode}")
         
         # 获取模式特定配置
         modes_config = config_data.get("modes", {})
         mode_config = modes_config.get(app_mode, {})
         
         if not mode_config:
-            print(f"⚠️  未找到模式 {app_mode} 的配置，使用默认配置")
             return Settings()
         
         # 构建完整配置
@@ -178,15 +173,9 @@ def load_config(config_file: Optional[str] = None) -> Settings:
             })
         }
         
-        print(f"✅ 配置加载成功")
-        print(f"   - xtquant模式: {final_config['xtquant']['mode']}")
-        print(f"   - 连接xtquant: {mode_config.get('connect_xtquant', False)}")
-        print(f"   - 允许真实交易: {final_config['xtquant']['trading']['allow_real_trading']}")
-        
         return Settings(**final_config)
         
     except Exception as e:
-        print(f"❌ 加载配置文件失败: {e}")
         import traceback
         traceback.print_exc()
         return Settings()

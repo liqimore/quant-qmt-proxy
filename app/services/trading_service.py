@@ -14,7 +14,6 @@ try:
     from xtquant import xtconstant
     XTQUANT_AVAILABLE = True
 except ImportError as e:
-    print(f"警告: 无法导入xtquant模块: {e}")
     XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
@@ -53,12 +52,10 @@ class TradingService:
     def _try_initialize(self):
         """尝试初始化xttrader"""
         if not XTQUANT_AVAILABLE:
-            print("xtquant模块不可用，使用模拟交易")
             self._initialized = False
             return
         
         if self.settings.xtquant.mode == XTQuantMode.MOCK:
-            print("使用模拟交易模式")
             self._initialized = False
             return
         
@@ -66,9 +63,9 @@ class TradingService:
             # 初始化xttrader
             # xttrader.connect()
             self._initialized = True
-            print(f"xttrader初始化成功，模式: {self.settings.xtquant.mode.value}")
+            print(f"  ✓ xttrader 已初始化")
         except Exception as e:
-            print(f"xttrader初始化失败: {e}")
+            print(f"  ⚠ xttrader 初始化失败: {e}")
             self._initialized = False
     
     def _should_use_real_trading(self) -> bool:
