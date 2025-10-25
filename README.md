@@ -1,6 +1,7 @@
 # xtquant-proxy
 
 > 持续开发中，请勿生产使用，可能存在跑不起来，数据错误等异常情况
+> 
 > dev-0.0.1 分支开发中，在0.0.1版本发布前，会定期同步开发进度至主线分支，发布后每个版本同步一次主线分支
 
 <div align="center">
@@ -56,6 +57,9 @@ quant-qmt-proxy/
 ├── START.md                  # 启动说明
 └── README.md                 # 项目文档
 ```
+
+## 近期用例测试结果
+<img width="1106" height="619" alt="image" src="https://github.com/user-attachments/assets/c0f56377-e74e-4d70-88bc-bd194b2cf430" />
 
 ## 主要功能模块
 
