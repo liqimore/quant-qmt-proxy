@@ -32,93 +32,67 @@ class TestTradingAPI:
     def test_get_account_info(self, http_client: httpx.Client, test_session: str):
         """测试获取账户信息"""
         response = http_client.get(f"/api/v1/trading/account/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "account" in result
+        result = response.json()
+        # API 直接返回 AccountInfo 模型
+        assert "account_id" in result
+        assert "account_type" in result
     
     def test_get_positions(self, http_client: httpx.Client, test_session: str):
         """测试获取持仓信息"""
         response = http_client.get(f"/api/v1/trading/positions/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "positions" in result
+        result = response.json()
+        # API 返回 PositionInfo 列表
+        assert isinstance(result, list)
     
     def test_get_asset(self, http_client: httpx.Client, test_session: str):
         """测试获取资产信息"""
         response = http_client.get(f"/api/v1/trading/asset/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "asset" in result
+        result = response.json()
+        # API 直接返回 AssetInfo 模型
+        assert "total_asset" in result or "cash" in result
     
     def test_get_risk(self, http_client: httpx.Client, test_session: str):
         """测试获取风险信息"""
         response = http_client.get(f"/api/v1/trading/risk/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "risk" in result
+        result = response.json()
+        # API 直接返回 RiskInfo 模型
+        # 检查实际返回的字段
+        assert "cash_ratio" in result or "position_ratio" in result or "var_95" in result
     
     def test_get_strategies(self, http_client: httpx.Client, test_session: str):
         """测试获取策略列表"""
         response = http_client.get(f"/api/v1/trading/strategies/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "strategies" in result
+        result = response.json()
+        # API 返回 StrategyInfo 列表
+        assert isinstance(result, list)
     
     def test_get_orders(self, http_client: httpx.Client, test_session: str):
         """测试获取订单列表"""
         response = http_client.get(f"/api/v1/trading/orders/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "orders" in result
+        result = response.json()
+        # API 返回 OrderResponse 列表
+        assert isinstance(result, list)
     
     def test_get_trades(self, http_client: httpx.Client, test_session: str):
         """测试获取成交记录"""
         response = http_client.get(f"/api/v1/trading/trades/{test_session}")
+        assert response.status_code == 200
         
-        # 如果账户未连接，应该返回400
-        if response.status_code == 400:
-            result = response.json()
-            assert "账户未连接" in result.get("message", "")
-        else:
-            assert response.status_code == 200
-            result = response.json()
-            assert "data" in result or "trades" in result
+        result = response.json()
+        # API 返回 TradeInfo 列表
+        assert isinstance(result, list)
     
     @pytest.mark.skip(reason="下单测试可能影响真实账户，默认跳过")
     def test_submit_order(self, http_client: httpx.Client, test_session: str):
@@ -193,54 +167,43 @@ class TestTradingAPIWithClient:
     def test_account_info_with_client(self, client: RESTTestClient, test_session: str):
         """使用客户端测试获取账户信息"""
         response = client.get_account_info(session_id=test_session)
+        assert response.status_code == 200
         
-        # 如果账户未连接，assert_success会抛出异常，检查异常消息
-        try:
-            result = client.assert_success(response)
-            assert "data" in result or "account" in result
-        except AssertionError as e:
-            # 如果是账户未连接错误，认为是预期行为
-            assert "账户未连接" in str(e) or "400" in str(e)
+        result = response.json()
+        assert "account_id" in result
+        assert "account_type" in result
     
     def test_positions_with_client(self, client: RESTTestClient, test_session: str):
         """使用客户端测试获取持仓"""
         response = client.get_positions(session_id=test_session)
+        assert response.status_code == 200
         
-        try:
-            result = client.assert_success(response)
-            assert "data" in result or "positions" in result
-        except AssertionError as e:
-            assert "账户未连接" in str(e) or "400" in str(e)
+        result = response.json()
+        assert isinstance(result, list)
     
     def test_asset_with_client(self, client: RESTTestClient, test_session: str):
         """使用客户端测试获取资产"""
         response = client.get_asset(session_id=test_session)
+        assert response.status_code == 200
         
-        try:
-            result = client.assert_success(response)
-            assert "data" in result or "asset" in result
-        except AssertionError as e:
-            assert "账户未连接" in str(e) or "400" in str(e)
+        result = response.json()
+        assert "total_asset" in result or "cash" in result
     
     def test_orders_with_client(self, client: RESTTestClient, test_session: str):
         """使用客户端测试获取订单"""
         response = client.get_orders(session_id=test_session)
+        assert response.status_code == 200
         
-        try:
-            result = client.assert_success(response)
-            assert "data" in result or "orders" in result
-        except AssertionError as e:
-            assert "账户未连接" in str(e) or "400" in str(e)
+        result = response.json()
+        assert isinstance(result, list)
     
     def test_trades_with_client(self, client: RESTTestClient, test_session: str):
         """使用客户端测试获取成交"""
         response = client.get_trades(session_id=test_session)
+        assert response.status_code == 200
         
-        try:
-            result = client.assert_success(response)
-            assert "data" in result or "trades" in result
-        except AssertionError as e:
-            assert "账户未连接" in str(e) or "400" in str(e)
+        result = response.json()
+        assert isinstance(result, list)
     
     def test_disconnect_with_client(self, client: RESTTestClient):
         """使用客户端测试断开连接"""

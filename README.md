@@ -114,6 +114,8 @@ xtquant:
 
 ### 4. 启动服务
 
+服务默认同时启动 **REST API** (端口 8000) 和 **gRPC** (端口 50051)。
+
 #### Windows PowerShell
 
 ```powershell
@@ -140,11 +142,17 @@ APP_MODE=dev python run.py
 APP_MODE=prod python run.py
 ```
 
-### 5. 访问API文档
+启动后可访问：
+- **REST API**: http://localhost:8000
+- **gRPC**: localhost:50051
+- **API文档**: http://localhost:8000/docs
+
+### 5. 访问服务
 
 - 📄 **Swagger UI**: http://localhost:8000/docs
 - 📚 **ReDoc**: http://localhost:8000/redoc
 - ❤️ **健康检查**: http://localhost:8000/health/
+- 🔌 **gRPC**: localhost:50051 (需要 gRPC 客户端)
 
 ### 6. 运行测试
 

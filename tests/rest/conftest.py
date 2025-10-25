@@ -158,15 +158,15 @@ def check_rest_server_health(http_client: httpx.Client):
 
 # ==================== 交易会话 Fixtures ====================
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def test_session(http_client: httpx.Client) -> Generator[str, None, None]:
     """
-    测试交易会话（类级别）
+    测试交易会话（函数级别 - 每个测试独立）
     
     自动连接账户，测试完成后自动断开
     """
     if SKIP_INTEGRATION_TESTS:
-        yield "test_session_id"
+        pytest.skip("集成测试已禁用（SKIP_INTEGRATION_TESTS=True）")
         return
     
     logger = logging.getLogger(__name__)
@@ -183,8 +183,12 @@ def test_session(http_client: httpx.Client) -> Generator[str, None, None]:
         
         if response.status_code == 200:
             result = response.json()
-            if result.get("success"):
-                session_id = result.get("session_id", "test_session")
+            # 从响应中获取 session_id，可能在根级别或 data 字段中
+            session_id = result.get("session_id")
+            if not session_id and "data" in result:
+                session_id = result["data"].get("session_id")
+            
+            if session_id:
                 logger.info(f"✅ 测试账户连接成功: {session_id}")
                 yield session_id
                 
@@ -192,14 +196,14 @@ def test_session(http_client: httpx.Client) -> Generator[str, None, None]:
                 try:
                     disconnect_response = http_client.post(f"/api/v1/trading/disconnect/{session_id}")
                     if disconnect_response.status_code == 200:
-                        logger.info("✅ 测试账户已断开")
+                        logger.info(f"✅ 测试账户已断开: {session_id}")
                 except Exception as e:
                     logger.warning(f"⚠️ 断开连接时出错: {e}")
             else:
-                logger.error(f"❌ 测试账户连接失败: {result.get('message')}")
-                pytest.skip("无法连接测试账户")
+                logger.error(f"❌ 响应中未找到 session_id: {result}")
+                pytest.skip("响应中未找到 session_id")
         else:
-            logger.error(f"❌ 连接请求失败: HTTP {response.status_code}")
+            logger.error(f"❌ 连接请求失败: HTTP {response.status_code}, {response.text}")
             pytest.skip("连接测试账户失败")
     except Exception as e:
         logger.error(f"❌ 连接异常: {e}")

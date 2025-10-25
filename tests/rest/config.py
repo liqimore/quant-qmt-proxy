@@ -20,7 +20,9 @@ READ_TIMEOUT = 30     # 读取超时（秒）
 # ==================== 测试控制 ====================
 
 # 是否跳过集成测试（需要真实服务运行）
-SKIP_INTEGRATION_TESTS = os.getenv("SKIP_INTEGRATION_TESTS", "true").lower() == "true"
+# 设置为 false 以运行完整的集成测试（需要真实账户连接）
+# 设置为 true 将使用模拟 session_id，测试会收到预期的 400 错误
+SKIP_INTEGRATION_TESTS = os.getenv("SKIP_INTEGRATION_TESTS", "false").lower() == "true"
 
 # 是否跳过慢速测试
 SKIP_SLOW_TESTS = os.getenv("SKIP_SLOW_TESTS", "false").lower() == "true"

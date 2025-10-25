@@ -136,8 +136,14 @@ TEST_ACCOUNT_ID = "your_account"
 TEST_ACCOUNT_PASSWORD = "your_password"
 
 # 是否跳过集成测试
-SKIP_INTEGRATION_TESTS = True  # 改为 False 以运行真实测试
+# false: 运行完整集成测试（需要真实账户连接）
+# true: 使用模拟数据，测试将收到预期的 400 错误
+SKIP_INTEGRATION_TESTS = False  # 默认运行集成测试
 ```
+
+**重要说明**:
+- 当 `SKIP_INTEGRATION_TESTS=False` 时，测试会实际连接账户并进行真实操作
+- 当 `SKIP_INTEGRATION_TESTS=True` 时，测试使用模拟 session_id，会收到 "账户未连接" 的 400 错误（这是预期行为）
 
 ## 📝 测试开发指南
 

@@ -230,7 +230,7 @@ class TestDataAPIPerformance:
 class TestDataAPIIntegration:
     """数据服务接口集成测试"""
     
-    def test_complete_data_workflow(self, http_client: httpx.Client, sample_sector_names):
+    def test_complete_data_workflow(self, http_client: httpx.Client, sample_sector_names, sample_stock_codes):
         """测试完整的数据查询工作流"""
         # 1. 获取板块列表
         response = http_client.get("/api/v1/data/sectors")
@@ -242,19 +242,38 @@ class TestDataAPIIntegration:
         assert response.status_code == 200
         
         result = response.json()
-        if "data" in result and result["data"]:
-            stocks = result["data"]
-            if stocks:
-                # 3. 获取第一只股票的行情
-                end_date = datetime.now()
-                start_date = end_date - timedelta(days=5)
-                
-                market_data = {
-                    "stock_codes": [stocks[0]] if isinstance(stocks[0], str) else [stocks[0].get("stock_code", "000001.SZ")],
-                    "start_date": start_date.strftime("%Y%m%d"),
-                    "end_date": end_date.strftime("%Y%m%d"),
-                    "period": "1d",
-                }
-                
-                response = http_client.post("/api/v1/data/market", json=market_data)
-                assert response.status_code == 200
+        
+        # 获取股票列表，支持多种响应格式
+        stocks = []
+        if "data" in result:
+            data_obj = result["data"]
+            if isinstance(data_obj, dict):
+                # 如果data是字典，尝试获取stock_list字段
+                stocks = data_obj.get("stock_list", []) or data_obj.get("stocks", [])
+            elif isinstance(data_obj, list):
+                # 如果data是列表，直接使用
+                stocks = data_obj
+        elif "stocks" in result:
+            stocks = result["stocks"]
+        
+        # 如果板块接口没有返回股票，使用样本股票进行测试
+        if not stocks:
+            stocks = sample_stock_codes[:1]
+        
+        # 3. 获取第一只股票的行情
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=5)
+        
+        # 处理股票代码格式（可能是字符串或字典）
+        first_stock = stocks[0]
+        stock_code = first_stock if isinstance(first_stock, str) else first_stock.get("stock_code", sample_stock_codes[0])
+        
+        market_data = {
+            "stock_codes": [stock_code],
+            "start_date": start_date.strftime("%Y%m%d"),
+            "end_date": end_date.strftime("%Y%m%d"),
+            "period": "1d",
+        }
+        
+        response = http_client.post("/api/v1/data/market", json=market_data)
+        assert response.status_code == 200

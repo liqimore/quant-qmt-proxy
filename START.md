@@ -2,6 +2,8 @@
 
 ## 快速启动
 
+服务默认同时启动 **REST API** (端口 8000) 和 **gRPC** (端口 50051)。
+
 ### Windows PowerShell
 
 ```powershell
@@ -27,6 +29,11 @@ APP_MODE=dev python run.py
 # prod模式
 APP_MODE=prod python run.py
 ```
+
+启动后可访问：
+- **REST API**: http://localhost:8000
+- **gRPC**: localhost:50051  
+- **API文档**: http://localhost:8000/docs
 
 ## 模式说明
 
