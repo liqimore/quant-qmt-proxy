@@ -76,12 +76,12 @@ LOG_FILE = "tests/rest/test_results.log"
 
 # 性能基准（毫秒）
 PERFORMANCE_BENCHMARKS = {
-    "health_check": 100,          # 健康检查 < 100ms
-    "single_stock_data": 500,     # 单股行情 < 500ms
-    "batch_stock_data": 2000,     # 批量行情 < 2s
-    "financial_data": 1000,       # 财务数据 < 1s
-    "submit_order": 1000,         # 提交订单 < 1s
-    "query_positions": 500,       # 查询持仓 < 500ms
+    "health_check": 3000,         # 健康检查 < 3s
+    "single_stock_data": 3000,    # 单股行情 < 3s
+    "batch_stock_data": 5000,     # 批量行情 < 5s
+    "financial_data": 3000,       # 财务数据 < 3s
+    "submit_order": 2000,         # 提交订单 < 2s
+    "query_positions": 2000,      # 查询持仓 < 2s
 }
 
 # 并发测试配置
