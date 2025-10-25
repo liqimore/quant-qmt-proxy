@@ -93,10 +93,9 @@ quant-qmt-proxy/
 │       ├── test_data_grpc_service.py
 │       ├── test_trading_grpc_service.py
 │       └── test_health_grpc_service.py
-├── xtquant/                    # xtquant SDK（国金 QMT）
+├── xtquant/                    # xtquant SDK（国金 QMT）请自行下载
 ├── scripts/                    # 工具脚本
 │   └── generate_proto.py       # protobuf 代码生成脚本
-├── docs/                       # 项目文档（本地保存，git 忽略）
 ├── logs/                       # 日志文件目录
 ├── config.yml                  # 统一配置文件
 ├── requirements.txt            # Python 依赖
