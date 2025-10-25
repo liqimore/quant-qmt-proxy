@@ -1,16 +1,34 @@
 """
-简单的 gRPC 客户端测试
+简单的 gRPC 客户端测试 - 向后兼容版本
+
+⚠️ 此文件已废弃，gRPC 客户端已重构为工具类
+
+新的 gRPC 测试框架：
+   - tests/grpc/client.py - gRPC 客户端封装
+   - tests/grpc/test_health_grpc_service.py - 健康检查测试
+   - tests/grpc/test_data_grpc_service.py - 数据服务测试
+   - tests/grpc/test_trading_grpc_service.py - 交易服务测试
+
+如需运行 gRPC 测试，请使用：
+   pytest tests/grpc/ -v
 """
-from app.grpc_client import QMTGrpcClient
+import warnings
+warnings.warn(
+    "test_grpc_client.py 已废弃，请使用: pytest tests/grpc/ -v",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+from tests.grpc.client import GRPCTestClient
 from generated import common_pb2, trading_pb2
 
 def test_grpc_client():
-    """测试 gRPC 客户端"""
+    """测试 gRPC 客户端（使用新的客户端类）"""
     print("=" * 70)
     print("QMT gRPC 客户端测试")
     print("=" * 70)
     
-    client = QMTGrpcClient(host='localhost', port=50051)
+    client = GRPCTestClient(host='localhost', port=50051)
     
     try:
         # 1. 健康检查

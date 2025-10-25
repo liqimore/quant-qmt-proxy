@@ -146,31 +146,26 @@ def health_stub(grpc_channel):
 
 # ==================== 健康检查 Fixtures ====================
 
-@pytest.fixture(scope="session", autouse=True)
-def check_grpc_server_health(health_stub):
+@pytest.fixture(scope="session", autouse=False)  # 改为 False，不自动运行
+def check_grpc_server_health():
     """
     检查 gRPC 服务器健康状态
     
-    在所有测试开始前自动执行
+    注意：已禁用自动运行，避免 fixture scope 冲突
     """
     if SKIP_INTEGRATION_TESTS:
         return
     
-    # TODO: proto 生成后取消注释
-    # logger = logging.getLogger(__name__)
-    # 
-    # try:
-    #     request = health_pb2.HealthCheckRequest(service="")
-    #     response = health_stub.Check(request, timeout=5)
-    #     
-    #     if response.status == health_pb2.HealthCheckResponse.SERVING:
-    #         logger.info("✅ gRPC 服务器健康检查通过")
-    #     else:
-    #         logger.warning("⚠️ gRPC 服务器状态异常")
-    #         pytest.skip("gRPC 服务器不可用")
-    # except grpc.RpcError as e:
-    #     logger.error(f"❌ 健康检查失败: {e}")
-    #     pytest.skip("无法连接到 gRPC 服务器")
+    # 简单实现，不依赖其他 fixtures
+    from tests.grpc.client import GRPCTestClient
+    try:
+        with GRPCTestClient() as client:
+            response = client.check_health()
+            from generated import health_pb2
+            if response.status == health_pb2.HealthCheckResponse.SERVING:
+                return True
+    except Exception:
+        pytest.skip("无法连接到 gRPC 服务器")
 
 
 # ==================== 交易会话 Fixtures ====================
