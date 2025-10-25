@@ -27,8 +27,15 @@ class AppConfig(BaseModel):
 class LoggingConfig(BaseModel):
     """日志配置"""
     level: str = "INFO"
-    file: Optional[str] = None
+    file: Optional[str] = "logs/app.log"
+    error_file: Optional[str] = "logs/error.log"
     format: str = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+    rotation: str = "10 MB"  # 日志文件轮转大小
+    retention: str = "30 days"  # 日志保留时间
+    compression: str = "zip"  # 压缩格式
+    console_output: bool = True  # 是否同时输出到控制台
+    backtrace: bool = True  # 是否显示完整堆栈跟踪
+    diagnose: bool = False  # 是否显示诊断信息
 
 
 class XTQuantDataConfig(BaseModel):
@@ -139,7 +146,15 @@ def load_config(config_file: Optional[str] = None) -> Settings:
             "logging": {
                 "level": mode_config.get("log_level", "INFO"),
                 "file": config_data.get("logging", {}).get("file", "logs/app.log"),
-                "format": config_data.get("logging", {}).get("format")
+                "error_file": config_data.get("logging", {}).get("error_file", "logs/error.log"),
+                "format": config_data.get("logging", {}).get("format"),
+                "rotation": config_data.get("logging", {}).get("rotation", "10 MB"),
+                "retention": config_data.get("logging", {}).get("retention", "30 days"),
+                "compression": config_data.get("logging", {}).get("compression", "zip"),
+                # 允许模式特定配置覆盖全局配置
+                "console_output": mode_config.get("logging", {}).get("console_output", config_data.get("logging", {}).get("console_output", True)),
+                "backtrace": mode_config.get("logging", {}).get("backtrace", config_data.get("logging", {}).get("backtrace", True)),
+                "diagnose": mode_config.get("logging", {}).get("diagnose", config_data.get("logging", {}).get("diagnose", False))
             },
             "xtquant": {
                 "mode": mode_config.get("xtquant_mode", app_mode),
