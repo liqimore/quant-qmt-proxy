@@ -8,9 +8,23 @@ app:
 
 # 日志配置
 logging:
-  level: "DEBUG"
-  file: "logs/app.log"
+  file: "logs/app.log"  # 主日志文件
+  error_file: "logs/error.log"  # 错误日志文件（仅ERROR及以上级别）
   format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+  rotation: "10 MB"  # 日志文件轮转大小（可选：10 MB, 500 KB, 1 day, 12:00 等）
+  retention: "30 days"  # 日志保留时间（可选：30 days, 1 week, 2 months 等）
+  compression: "zip"  # 压缩格式（可选：zip, gz, tar.gz, bz2）
+  console_output: true  # 是否同时输出到控制台（开发时建议true，生产可设为false）
+  backtrace: true  # 是否显示完整堆栈跟踪
+  diagnose: false  # 是否显示诊断信息（仅在调试复杂问题时启用）
+
+# gRPC 配置
+grpc:
+  enabled: true
+  host: "0.0.0.0"
+  port: 50051
+  max_workers: 10
+  max_message_length: 52428800  # 50MB
 
 # xtquant配置
 xtquant:
@@ -80,6 +94,10 @@ modes:
       url: "redis://localhost:6379/0"
     cors:
       allow_origins: ["https://yourdomain.com"]
+    # 生产环境可以关闭控制台输出，只输出到文件
+    logging:
+      console_output: false
+      diagnose: false
 
 # 安全配置
 security:

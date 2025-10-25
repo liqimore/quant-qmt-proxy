@@ -52,12 +52,17 @@ def main():
     print(f"📖 ReDoc文档: http://{args.host}:{args.port}/redoc")
     print("=" * 60)
     
+    # 热加载配置
+    reload_enabled = args.reload if args.reload else False
+    reload_includes = ["*.py"] if reload_enabled else None
+    
     # 启动服务
     uvicorn.run(
         "app.main:app",
         host=args.host,
         port=args.port,
-        reload=args.reload or settings.app.debug,
+        reload=reload_enabled,
+        reload_includes=reload_includes,
         log_level=settings.logging.level.lower(),
         access_log=True
     )

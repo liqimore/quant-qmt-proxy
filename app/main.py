@@ -22,17 +22,25 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
     settings = get_settings()
-    setup_logging(settings.logging.level, settings.logging.file)
+    setup_logging(
+        log_level=settings.logging.level,
+        log_file=settings.logging.file,
+        error_file=settings.logging.error_file,
+        log_format=settings.logging.format,
+        rotation=settings.logging.rotation,
+        retention=settings.logging.retention,
+        compression=settings.logging.compression,
+        console_output=settings.logging.console_output,
+        backtrace=settings.logging.backtrace,
+        diagnose=settings.logging.diagnose
+    )
     
-    print(f"启动 {settings.app.name} v{settings.app.version}")
-    print(f"调试模式: {settings.app.debug}")
-    print(f"xtquant模式: {settings.xtquant.mode.value}")
-    print(f"服务地址: http://{settings.app.host}:{settings.app.port}")
+    print("✓ REST API 服务已就绪")
     
     yield
     
     # 关闭时执行
-    print("应用正在关闭...")
+    print("✓ REST API 服务正在关闭...")
 
 
 # 创建FastAPI应用
@@ -142,10 +150,12 @@ if __name__ == "__main__":
     import uvicorn
     settings = get_settings()
     
+    # 关闭热加载，如需启用请设置 reload=True 和 reload_includes=["*.py"]
     uvicorn.run(
         "app.main:app",
         host=settings.app.host,
         port=settings.app.port,
-        reload=settings.app.debug,
+        reload=False,  # 热加载已关闭
+        reload_includes=None,  # 仅监控 .py 文件（当 reload=True 时）
         log_level=settings.logging.level.lower()
     )

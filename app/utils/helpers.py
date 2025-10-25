@@ -8,30 +8,133 @@ from datetime import datetime, date
 from decimal import Decimal
 
 
-def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None):
-    """设置日志配置"""
+def setup_logging(
+    log_level: str = "INFO",
+    log_file: Optional[str] = "logs/app.log",
+    error_file: Optional[str] = "logs/error.log",
+    log_format: Optional[str] = None,
+    rotation: str = "10 MB",
+    retention: str = "30 days",
+    compression: str = "zip",
+    console_output: bool = True,
+    backtrace: bool = True,
+    diagnose: bool = False
+):
+    """设置日志配置
+    
+    Args:
+        log_level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        log_file: 主日志文件路径
+        error_file: 错误日志文件路径 (只记录 ERROR 及以上级别)
+        log_format: 日志格式字符串
+        rotation: 日志轮转大小或时间 (如 "10 MB", "500 KB", "1 day")
+        retention: 日志保留时间 (如 "30 days", "1 week")
+        compression: 压缩格式 (zip, gz, tar.gz 等)
+        console_output: 是否同时输出到控制台
+        backtrace: 是否显示完整堆栈跟踪
+        diagnose: 是否显示诊断信息
+    """
     import sys
+    import os
     from loguru import logger
+    
+    # 设置标准输出编码为 UTF-8 (Windows 兼容性)
+    if sys.platform == 'win32':
+        try:
+            import codecs
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+        except Exception:
+            pass  # 如果设置失败，继续使用默认编码
     
     # 移除默认处理器
     logger.remove()
     
-    # 添加控制台输出
-    logger.add(
-        sys.stdout,
-        level=log_level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    )
+    # 默认格式
+    if log_format is None:
+        log_format = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
     
-    # 添加文件输出（如果指定）
+    # 控制台格式（带颜色）
+    console_format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+    
+    # 添加控制台输出
+    if console_output:
+        logger.add(
+            sys.stdout,
+            level=log_level,
+            format=console_format,
+            colorize=True,
+            backtrace=backtrace,
+            diagnose=diagnose
+        )
+    
+    # 确保日志目录存在
     if log_file:
+        log_dir = os.path.dirname(log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+        
+        # 添加主日志文件输出（所有级别）
         logger.add(
             log_file,
             level=log_level,
-            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-            rotation="10 MB",
-            retention="7 days"
+            format=log_format,
+            rotation=rotation,
+            retention=retention,
+            compression=compression,
+            encoding="utf-8",
+            backtrace=backtrace,
+            diagnose=diagnose,
+            enqueue=True  # 异步写入，提高性能
         )
+    
+    # 添加错误日志文件输出（仅 ERROR 及以上级别）
+    if error_file:
+        error_dir = os.path.dirname(error_file)
+        if error_dir and not os.path.exists(error_dir):
+            os.makedirs(error_dir, exist_ok=True)
+        
+        logger.add(
+            error_file,
+            level="ERROR",
+            format=log_format,
+            rotation=rotation,
+            retention=retention,
+            compression=compression,
+            encoding="utf-8",
+            backtrace=True,  # 错误日志总是显示完整堆栈
+            diagnose=diagnose,
+            enqueue=True
+        )
+    
+    # 拦截标准 logging 模块的日志，重定向到 loguru
+    # 这样 uvicorn 和其他使用标准 logging 的库也会输出到文件
+    class InterceptHandler(logging.Handler):
+        def emit(self, record):
+            # 获取对应的 loguru 级别
+            try:
+                level = logger.level(record.levelname).name
+            except ValueError:
+                level = record.levelno
+            
+            # 找到调用者的帧
+            frame, depth = logging.currentframe(), 2
+            while frame.f_code.co_filename == logging.__file__:
+                frame = frame.f_back
+                depth += 1
+            
+            logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+    
+    # 配置标准 logging 使用拦截器
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    
+    # 为常见的日志记录器设置拦截
+    for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"]:
+        logging_logger = logging.getLogger(logger_name)
+        logging_logger.handlers = [InterceptHandler()]
+        logging_logger.propagate = False
+    
+    return logger
 
 
 def format_response(

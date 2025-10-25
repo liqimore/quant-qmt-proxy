@@ -27,8 +27,15 @@ class AppConfig(BaseModel):
 class LoggingConfig(BaseModel):
     """日志配置"""
     level: str = "INFO"
-    file: Optional[str] = None
+    file: Optional[str] = "logs/app.log"
+    error_file: Optional[str] = "logs/error.log"
     format: str = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+    rotation: str = "10 MB"  # 日志文件轮转大小
+    retention: str = "30 days"  # 日志保留时间
+    compression: str = "zip"  # 压缩格式
+    console_output: bool = True  # 是否同时输出到控制台
+    backtrace: bool = True  # 是否显示完整堆栈跟踪
+    diagnose: bool = False  # 是否显示诊断信息
 
 
 class XTQuantDataConfig(BaseModel):
@@ -89,6 +96,13 @@ class Settings(BaseModel):
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     cors: CORSConfig = Field(default_factory=CORSConfig)
+    
+    # gRPC 配置（使用属性访问以保持向后兼容）
+    grpc_enabled: bool = True
+    grpc_host: str = "0.0.0.0"
+    grpc_port: int = 50051
+    grpc_max_workers: int = 10
+    grpc_max_message_length: int = 50 * 1024 * 1024  # 50MB
 
 
 def load_config(config_file: Optional[str] = None) -> Settings:
@@ -101,7 +115,6 @@ def load_config(config_file: Optional[str] = None) -> Settings:
         config_file = "config.yml"
     
     if not os.path.exists(config_file):
-        print(f"⚠️  配置文件 {config_file} 不存在，使用默认配置")
         return Settings()
     
     try:
@@ -112,17 +125,13 @@ def load_config(config_file: Optional[str] = None) -> Settings:
         app_mode = os.getenv("APP_MODE", "dev").lower()
         
         if app_mode not in ["mock", "dev", "prod"]:
-            print(f"⚠️  无效的 APP_MODE: {app_mode}，使用默认值 dev")
             app_mode = "dev"
-        
-        print(f"🚀 加载配置，运行模式: {app_mode}")
         
         # 获取模式特定配置
         modes_config = config_data.get("modes", {})
         mode_config = modes_config.get(app_mode, {})
         
         if not mode_config:
-            print(f"⚠️  未找到模式 {app_mode} 的配置，使用默认配置")
             return Settings()
         
         # 构建完整配置
@@ -137,7 +146,15 @@ def load_config(config_file: Optional[str] = None) -> Settings:
             "logging": {
                 "level": mode_config.get("log_level", "INFO"),
                 "file": config_data.get("logging", {}).get("file", "logs/app.log"),
-                "format": config_data.get("logging", {}).get("format")
+                "error_file": config_data.get("logging", {}).get("error_file", "logs/error.log"),
+                "format": config_data.get("logging", {}).get("format"),
+                "rotation": config_data.get("logging", {}).get("rotation", "10 MB"),
+                "retention": config_data.get("logging", {}).get("retention", "30 days"),
+                "compression": config_data.get("logging", {}).get("compression", "zip"),
+                # 允许模式特定配置覆盖全局配置
+                "console_output": mode_config.get("logging", {}).get("console_output", config_data.get("logging", {}).get("console_output", True)),
+                "backtrace": mode_config.get("logging", {}).get("backtrace", config_data.get("logging", {}).get("backtrace", True)),
+                "diagnose": mode_config.get("logging", {}).get("diagnose", config_data.get("logging", {}).get("diagnose", False))
             },
             "xtquant": {
                 "mode": mode_config.get("xtquant_mode", app_mode),
@@ -171,15 +188,9 @@ def load_config(config_file: Optional[str] = None) -> Settings:
             })
         }
         
-        print(f"✅ 配置加载成功")
-        print(f"   - xtquant模式: {final_config['xtquant']['mode']}")
-        print(f"   - 连接xtquant: {mode_config.get('connect_xtquant', False)}")
-        print(f"   - 允许真实交易: {final_config['xtquant']['trading']['allow_real_trading']}")
-        
         return Settings(**final_config)
         
     except Exception as e:
-        print(f"❌ 加载配置文件失败: {e}")
         import traceback
         traceback.print_exc()
         return Settings()

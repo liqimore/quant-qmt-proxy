@@ -15,7 +15,6 @@ try:
     from xtquant import xtconstant
     XTQUANT_AVAILABLE = True
 except ImportError as e:
-    print(f"警告: 无法导入xtquant模块: {e}")
     XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
@@ -50,26 +49,15 @@ class DataService:
     
     def _try_initialize(self):
         """尝试初始化xtdata"""
-        print("\n" + "=" * 70)
-        print("🔧 DataService 初始化开始")
-        print("=" * 70)
-        
         if not XTQUANT_AVAILABLE:
-            print("❌ xtquant模块不可用，使用模拟数据")
             self._initialized = False
             return
         
-        print(f"✅ xtquant模块已导入")
-        print(f"📋 配置模式: {self.settings.xtquant.mode.value}")
-        
         if self.settings.xtquant.mode == XTQuantMode.MOCK:
-            print("⚠️  使用模拟数据模式（不连接真实QMT）")
             self._initialized = False
             return
         
         try:
-            print(f"\n🔗 准备连接QMT服务...")
-            
             # 设置数据路径（如果配置了QMT路径）
             if self.settings.xtquant.data.qmt_userdata_path:
                 qmt_data_dir = os.path.join(
@@ -77,11 +65,8 @@ class DataService:
                     'datadir'
                 )
                 xtdata.data_dir = qmt_data_dir
-                print(f"📁 设置数据路径: {qmt_data_dir}")
-                print(f"   路径存在: {os.path.exists(qmt_data_dir)}")
             
             # 初始化xtdata（添加超时保护）
-            print(f"🔌 正在连接xtquant服务（可能需要几秒钟）...")
             xtdata.enable_hello = False  # 禁用hello信息，减少输出
             
             import threading
@@ -107,29 +92,19 @@ class DataService:
             
             if client and hasattr(client, 'is_connected') and client.is_connected():
                 self._initialized = True
-                actual_data_dir = xtdata.get_data_dir()
-                print(f"✅ xtdata连接成功！")
-                print(f"   模式: {self.settings.xtquant.mode.value}")
-                print(f"   实际数据路径: {actual_data_dir}")
-                print(f"   客户端状态: 已连接")
+                print(f"  ✓ xtdata 已连接")
             elif connect_thread.is_alive():
-                print(f"⚠️  xtdata连接超时（5秒），继续使用模拟数据")
-                print(f"   提示: 请检查QMT客户端是否正在运行")
+                print(f"  ⚠ xtdata 连接超时，使用模拟数据（请检查QMT是否运行）")
                 self._initialized = False
             else:
-                print(f"❌ xtdata连接失败：客户端未连接")
                 self._initialized = False
                 
         except KeyboardInterrupt:
-            print(f"\n⚠️  用户中断连接")
             self._initialized = False
             raise
         except Exception as e:
-            print(f"❌ xtdata初始化失败: {e}")
-            print(f"   将使用模拟数据模式")
+            print(f"  ⚠ xtdata 连接失败: {e}")
             self._initialized = False
-        
-        print("=" * 70 + "\n")
     
     def _should_use_real_data(self) -> bool:
         """判断是否使用真实数据（dev和prod模式都连接xtquant）"""
@@ -141,14 +116,6 @@ class DataService:
     
     def get_market_data(self, request: MarketDataRequest) -> List[MarketDataResponse]:
         """获取市场数据"""
-        print(f"\n📊 获取市场数据请求:")
-        print(f"   股票代码: {request.stock_codes}")
-        print(f"   周期: {request.period.value}")
-        print(f"   开始日期: {request.start_date}")
-        print(f"   结束日期: {request.end_date}")
-        print(f"   使用真实数据: {self._should_use_real_data()}")
-        print(f"   xtdata已初始化: {self._initialized}")
-        
         try:
             results = []
             for stock_code in request.stock_codes:
@@ -157,7 +124,6 @@ class DataService:
                 
                 if self._should_use_real_data():
                     # 使用真实xtdata接口
-                    print(f"\n🔍 正在获取 {stock_code} 的真实数据...")
                     try:
                         # 先下载历史数据（确保本地有数据）
                         print(f"   📥 下载历史数据...")

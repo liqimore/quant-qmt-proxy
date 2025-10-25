@@ -65,10 +65,6 @@ userdata_mini/
 .coverage
 htmlcov/
 .tox/
-test_*.py
-quick_test.py
-restart_and_test.py
-check_xtquant.py
 
 # Temporary files
 *.tmp
