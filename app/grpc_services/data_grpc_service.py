@@ -3,6 +3,7 @@ gRPC 数据服务实现
 """
 import grpc
 from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
 
 # 导入生成的 protobuf 代码
 from generated import data_pb2, data_pb2_grpc, common_pb2
@@ -17,6 +18,17 @@ from app.models.data_models import (
     PeriodType
 )
 from app.utils.exceptions import DataServiceException
+
+
+def pydantic_to_dict(obj: Any) -> Any:
+    """将Pydantic对象转换为字典，如果不是Pydantic对象则直接返回"""
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()
+    elif isinstance(obj, list):
+        return [pydantic_to_dict(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: pydantic_to_dict(v) for k, v in obj.items()}
+    return obj
 
 
 class DataGrpcService(data_pb2_grpc.DataServiceServicer):
@@ -353,15 +365,16 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         try:
             result = self.data_service.get_instrument_type(request.stock_code)
             
+            # result是InstrumentTypeInfo对象，直接访问属性
             info = data_pb2.InstrumentTypeInfo(
-                stock_code=result['stock_code'],
-                index=result.get('index', False),
-                stock=result.get('stock', False),
-                fund=result.get('fund', False),
-                etf=result.get('etf', False),
-                bond=result.get('bond', False),
-                option=result.get('option', False),
-                futures=result.get('futures', False)
+                stock_code=result.stock_code,
+                index=result.index,
+                stock=result.stock,
+                fund=result.fund,
+                etf=result.etf,
+                bond=result.bond,
+                option=result.option,
+                futures=result.futures
             )
             
             return data_pb2.InstrumentTypeResponse(
@@ -384,8 +397,9 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         try:
             result = self.data_service.get_holidays()
             
+            # result是HolidayInfo对象，直接访问属性
             return data_pb2.HolidayInfoResponse(
-                holidays=result.get('holidays', []),
+                holidays=result.holidays,
                 status=common_pb2.Status(code=0, message="success")
             )
         except Exception as e:
@@ -404,25 +418,27 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         try:
             results = self.data_service.get_cb_info()
             
-            bonds = []
-            for cb in results:
-                bond = data_pb2.ConvertibleBondInfo(
-                    bond_code=cb.get('bond_code', ''),
-                    bond_name=cb.get('bond_name', ''),
-                    stock_code=cb.get('stock_code', ''),
-                    stock_name=cb.get('stock_name', ''),
-                    conversion_price=cb.get('conversion_price', 0.0),
-                    conversion_value=cb.get('conversion_value', 0.0),
-                    conversion_premium_rate=cb.get('conversion_premium_rate', 0.0),
-                    current_price=cb.get('current_price', 0.0),
-                    par_value=cb.get('par_value', 0.0),
-                    list_date=cb.get('list_date', ''),
-                    maturity_date=cb.get('maturity_date', ''),
-                    conversion_begin_date=cb.get('conversion_begin_date', ''),
-                    conversion_end_date=cb.get('conversion_end_date', ''),
-                    raw_data=cb.get('raw_data', {})
-                )
-                bonds.append(bond)
+            # 检查是否客户端不支持
+            if isinstance(results, list) and len(results) > 0:
+                # results是ConvertibleBondInfo对象列表，直接访问属性
+                bonds = []
+                for cb in results:
+                    bond = data_pb2.ConvertibleBondInfo(
+                        bond_code=cb.bond_code,
+                        bond_name=cb.bond_name or '',
+                        stock_code=cb.stock_code or '',
+                        stock_name=cb.stock_name or '',
+                        conversion_price=cb.conversion_price or 0.0,
+                        conversion_value=cb.conversion_value or 0.0,
+                        conversion_premium_rate=cb.conversion_premium_rate or 0.0,
+                        current_price=cb.current_price or 0.0,
+                        par_value=cb.par_value or 0.0,
+                        list_date=cb.list_date or '',
+                        maturity_date=cb.maturity_date or '',
+                        conversion_begin_date=cb.conversion_begin_date or '',
+                        conversion_end_date=cb.conversion_end_date or ''
+                    )
+                    bonds.append(bond)
             
             return data_pb2.ConvertibleBondListResponse(
                 bonds=bonds,
@@ -446,22 +462,22 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
             
             ipos = []
             for ipo in results:
+                # ipo是IpoInfo对象，直接访问属性
                 ipo_info = data_pb2.IpoInfo(
-                    security_code=ipo.get('security_code', ''),
-                    code_name=ipo.get('code_name', ''),
-                    market=ipo.get('market', ''),
-                    act_issue_qty=ipo.get('act_issue_qty', 0),
-                    online_issue_qty=ipo.get('online_issue_qty', 0),
-                    online_sub_code=ipo.get('online_sub_code', ''),
-                    online_sub_max_qty=ipo.get('online_sub_max_qty', 0),
-                    publish_price=ipo.get('publish_price', 0.0),
-                    is_profit=ipo.get('is_profit', 0),
-                    industry_pe=ipo.get('industry_pe', 0.0),
-                    after_pe=ipo.get('after_pe', 0.0),
-                    subscribe_date=ipo.get('subscribe_date', ''),
-                    lottery_date=ipo.get('lottery_date', ''),
-                    list_date=ipo.get('list_date', ''),
-                    raw_data=ipo.get('raw_data', {})
+                    security_code=ipo.security_code or '',
+                    code_name=ipo.code_name or '',
+                    market=ipo.market or '',
+                    act_issue_qty=ipo.act_issue_qty or 0,
+                    online_issue_qty=ipo.online_issue_qty or 0,
+                    online_sub_code=ipo.online_sub_code or '',
+                    online_sub_max_qty=ipo.online_sub_max_qty or 0,
+                    publish_price=ipo.publish_price or 0.0,
+                    is_profit=ipo.is_profit or 0,
+                    industry_pe=ipo.industry_pe or 0.0,
+                    after_pe=ipo.after_pe or 0.0,
+                    subscribe_date=ipo.subscribe_date or '',
+                    lottery_date=ipo.lottery_date or '',
+                    list_date=ipo.list_date or ''
                 )
                 ipos.append(ipo_info)
             
@@ -485,15 +501,21 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         try:
             result = self.data_service.get_period_list()
             
+            # result是PeriodListResponse对象，直接访问属性
             return data_pb2.PeriodListResponse(
-                periods=result.get('periods', []),
+                periods=result.periods,
                 status=common_pb2.Status(code=0, message="success")
             )
         except Exception as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+            # 检查是否为不支持的功能
+            error_msg = str(e)
+            if "function not realize" in error_msg or "未支持此功能" in error_msg:
+                context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(error_msg)
             return data_pb2.PeriodListResponse(
-                status=common_pb2.Status(code=500, message=str(e))
+                status=common_pb2.Status(code=500, message=error_msg)
             )
     
     def GetDataDir(
@@ -505,8 +527,9 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         try:
             result = self.data_service.get_data_dir()
             
+            # result是DataDirResponse对象，直接访问属性
             return data_pb2.DataDirResponse(
-                data_dir=result.get('data_dir', ''),
+                data_dir=result.data_dir,
                 status=common_pb2.Status(code=0, message="success")
             )
         except Exception as e:

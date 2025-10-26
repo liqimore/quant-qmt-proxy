@@ -8,7 +8,13 @@ from app.models.data_models import (
     MarketDataRequest, FinancialDataRequest, SectorRequest,
     IndexWeightRequest, MarketDataResponse, FinancialDataResponse,
     SectorResponse, IndexWeightResponse, InstrumentInfo,
-    TradingCalendarResponse, ETFInfoResponse
+    TradingCalendarResponse, ETFInfoResponse,
+    # 阶段2: 行情数据请求模型
+    LocalDataRequest, FullTickRequest, DividFactorsRequest, FullKlineRequest,
+    # 阶段3: 数据下载请求模型
+    DownloadHistoryDataRequest, DownloadHistoryDataBatchRequest, DownloadFinancialDataRequest,
+    # 阶段5: Level2请求模型
+    L2QuoteRequest, L2OrderRequest, L2TransactionRequest
 )
 from app.utils.helpers import format_response
 from app.utils.exceptions import DataServiceException, handle_xtquant_exception
@@ -284,16 +290,15 @@ async def get_data_dir(
 
 @router.post("/local-data")
 async def get_local_data(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
-    period: str = "1d",
+    request: LocalDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取本地行情数据"""
     try:
-        result = data_service.get_local_data(stock_codes, start_time, end_time, period)
+        result = data_service.get_local_data(
+            request.stock_codes, request.start_time, request.end_time, request.period
+        )
         return format_response(data=result, message="获取本地行情数据成功")
     except Exception as e:
         raise HTTPException(
@@ -304,16 +309,15 @@ async def get_local_data(
 
 @router.post("/full-tick")
 async def get_full_tick(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
+    request: FullTickRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取完整tick数据"""
     try:
-        from app.models.data_models import TickData
-        result = data_service.get_full_tick(stock_codes, start_time, end_time)
+        result = data_service.get_full_tick(
+            request.stock_codes, request.start_time, request.end_time
+        )
         return format_response(data=result, message="获取完整tick数据成功")
     except Exception as e:
         raise HTTPException(
@@ -324,14 +328,13 @@ async def get_full_tick(
 
 @router.post("/divid-factors")
 async def get_divid_factors(
-    stock_code: str,
+    request: DividFactorsRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取除权除息数据"""
     try:
-        from app.models.data_models import DividendFactor
-        result = data_service.get_divid_factors(stock_code)
+        result = data_service.get_divid_factors(request.stock_code)
         return format_response(data=result, message="获取除权除息数据成功")
     except Exception as e:
         raise HTTPException(
@@ -342,16 +345,15 @@ async def get_divid_factors(
 
 @router.post("/full-kline")
 async def get_full_kline(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
-    period: str = "1d",
+    request: FullKlineRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取完整K线数据（带复权信息）"""
     try:
-        result = data_service.get_full_kline(stock_codes, start_time, end_time, period)
+        result = data_service.get_full_kline(
+            request.stock_codes, request.start_time, request.end_time, request.period
+        )
         return format_response(data=result, message="获取完整K线数据成功")
     except Exception as e:
         raise HTTPException(
@@ -364,19 +366,15 @@ async def get_full_kline(
 
 @router.post("/download/history-data")
 async def download_history_data(
-    stock_code: str,
-    period: str = "1d",
-    start_time: str = "",
-    end_time: str = "",
-    incrementally: bool = False,
+    request: DownloadHistoryDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """下载单只股票历史数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_history_data(
-            stock_code, period, start_time, end_time, incrementally
+            request.stock_code, request.period, request.start_time, 
+            request.end_time, request.incrementally
         )
         return format_response(data=result, message="下载历史数据任务已提交")
     except Exception as e:
@@ -388,18 +386,14 @@ async def download_history_data(
 
 @router.post("/download/history-data-batch")
 async def download_history_data_batch(
-    stock_list: List[str],
-    period: str = "1d",
-    start_time: str = "",
-    end_time: str = "",
+    request: DownloadHistoryDataBatchRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """批量下载历史数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_history_data_batch(
-            stock_list, period, start_time, end_time
+            request.stock_list, request.period, request.start_time, request.end_time
         )
         return format_response(data=result, message="批量下载历史数据任务已提交")
     except Exception as e:
@@ -411,18 +405,14 @@ async def download_history_data_batch(
 
 @router.post("/download/financial-data")
 async def download_financial_data(
-    stock_list: List[str],
-    table_list: List[str],
-    start_date: str = "",
-    end_date: str = "",
+    request: DownloadFinancialDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """下载财务数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_financial_data(
-            stock_list, table_list, start_date, end_date
+            request.stock_list, request.table_list, request.start_date, request.end_date
         )
         return format_response(data=result, message="下载财务数据任务已提交")
     except Exception as e:

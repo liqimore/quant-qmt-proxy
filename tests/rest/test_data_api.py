@@ -596,3 +596,607 @@ class TestDataAPIIntegration:
         
         response = http_client.post("/api/v1/data/market", json=market_data)
         assert response.status_code == 200
+
+
+# ==================== 新增接口测试：阶段1-5 ====================
+
+class TestNewDataAPI:
+    """新增数据服务接口测试类"""
+    
+    # ===== 阶段1: 基础信息接口测试 =====
+    
+    def test_get_instrument_type(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取合约类型"""
+        stock_code = sample_stock_codes[0]
+        
+        response = http_client.get(f"/api/v1/data/instrument-type/{stock_code}")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📊 合约类型测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        # 验证响应格式
+        if "data" in result:
+            data = result["data"]
+            assert "stock_code" in data
+            assert data["stock_code"] == stock_code
+            
+            # 至少有一个类型为True
+            type_fields = ["index", "stock", "fund", "etf", "bond", "option", "futures"]
+            has_type = any(data.get(field, False) for field in type_fields)
+            assert has_type, "至少应有一个合约类型为True"
+            
+            print(f"\n✓ 合约类型: {[k for k in type_fields if data.get(k)]}")
+        
+        print("="*80)
+    
+    def test_get_holidays(self, http_client: httpx.Client):
+        """测试获取节假日列表"""
+        response = http_client.get("/api/v1/data/holidays")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("🎊 节假日列表测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data = result["data"]
+            if "holidays" in data:
+                holidays = data["holidays"]
+                assert isinstance(holidays, list)
+                print(f"\n✓ 节假日数量: {len(holidays)}")
+                if len(holidays) > 0:
+                    print(f"✓ 前5个节假日: {holidays[:5]}")
+                    # 验证日期格式
+                    assert len(str(holidays[0])) == 8, "日期格式应为YYYYMMDD"
+        
+        print("="*80)
+    
+    def test_get_cb_info(self, http_client: httpx.Client):
+        """测试获取可转债信息"""
+        response = http_client.get("/api/v1/data/convertible-bonds")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("🔄 可转债信息测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1000])  # 只打印前1000字符
+        
+        if "data" in result:
+            data = result["data"]
+            if isinstance(data, list) and len(data) > 0:
+                first_cb = data[0]
+                assert "bond_code" in first_cb
+                print(f"\n✓ 可转债数量: {len(data)}")
+                print(f"✓ 第一只可转债代码: {first_cb.get('bond_code')}")
+                print(f"✓ 第一只可转债名称: {first_cb.get('bond_name')}")
+        
+        print("="*80)
+    
+    def test_get_ipo_info(self, http_client: httpx.Client):
+        """测试获取新股申购信息"""
+        response = http_client.get("/api/v1/data/ipo-info")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("🆕 新股申购信息测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1000])
+        
+        if "data" in result:
+            data = result["data"]
+            if isinstance(data, list) and len(data) > 0:
+                first_ipo = data[0]
+                assert "security_code" in first_ipo
+                print(f"\n✓ 新股数量: {len(data)}")
+                print(f"✓ 第一只新股代码: {first_ipo.get('security_code')}")
+                print(f"✓ 第一只新股名称: {first_ipo.get('code_name')}")
+        
+        print("="*80)
+    
+    def test_get_period_list(self, http_client: httpx.Client):
+        """测试获取可用周期列表"""
+        response = http_client.get("/api/v1/data/period-list")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📅 可用周期列表测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data = result["data"]
+            if "periods" in data:
+                periods = data["periods"]
+                assert isinstance(periods, list)
+                assert len(periods) > 0
+                print(f"\n✓ 可用周期: {periods}")
+                # 常见周期应该包含在内
+                common_periods = ["1m", "5m", "1d"]
+                for period in common_periods:
+                    if period in periods:
+                        print(f"✓ 包含常用周期: {period}")
+        
+        print("="*80)
+    
+    def test_get_data_dir(self, http_client: httpx.Client):
+        """测试获取本地数据路径"""
+        response = http_client.get("/api/v1/data/data-dir")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📁 本地数据路径测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data = result["data"]
+            if "data_dir" in data:
+                data_dir = data["data_dir"]
+                assert isinstance(data_dir, str)
+                assert len(data_dir) > 0
+                print(f"\n✓ 数据路径: {data_dir}")
+        
+        print("="*80)
+    
+    # ===== 阶段2: 行情数据获取接口测试 =====
+    
+    def test_get_local_data(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取本地行情数据"""
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=10)
+        
+        data = {
+            "stock_codes": sample_stock_codes[:2],
+            "start_time": start_date.strftime("%Y%m%d"),
+            "end_time": end_date.strftime("%Y%m%d"),
+            "period": "1d"
+        }
+        
+        response = http_client.post("/api/v1/data/local-data", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📊 本地行情数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1500])
+        
+        print("="*80)
+    
+    def test_get_full_tick(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取完整tick数据"""
+        data = {
+            "stock_codes": [sample_stock_codes[0]],
+            "start_time": "",
+            "end_time": ""
+        }
+        
+        response = http_client.post("/api/v1/data/full-tick", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("⏱️  完整Tick数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1500])
+        
+        # 验证tick字段完整性
+        if "data" in result:
+            data_obj = result["data"]
+            if isinstance(data_obj, dict):
+                for stock_code, tick_list in data_obj.items():
+                    if isinstance(tick_list, list) and len(tick_list) > 0:
+                        first_tick = tick_list[0]
+                        # 验证16个tick字段
+                        tick_fields = ["time", "last_price", "open", "high", "low", "last_close",
+                                     "amount", "volume", "pvolume", "stock_status", "open_int",
+                                     "last_settlement_price", "ask_price", "bid_price", 
+                                     "ask_vol", "bid_vol", "transaction_num"]
+                        found_fields = [f for f in tick_fields if f in first_tick]
+                        print(f"\n✓ Tick字段数量: {len(found_fields)}/17")
+                        print(f"✓ 包含字段: {found_fields[:5]}...")
+        
+        print("="*80)
+    
+    def test_get_divid_factors(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取除权除息数据"""
+        data = {"stock_code": sample_stock_codes[0]}
+        
+        response = http_client.post("/api/v1/data/divid-factors", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("💰 除权除息数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1000])
+        
+        if "data" in result:
+            data_obj = result["data"]
+            if isinstance(data_obj, list) and len(data_obj) > 0:
+                first_factor = data_obj[0]
+                print(f"\n✓ 除权记录数: {len(data_obj)}")
+                # 验证除权字段
+                factor_fields = ["time", "interest", "stock_bonus", "stock_gift", 
+                               "allot_num", "allot_price", "gugai", "dr"]
+                found_fields = [f for f in factor_fields if f in first_factor]
+                print(f"✓ 包含字段: {found_fields}")
+        
+        print("="*80)
+    
+    def test_get_full_kline(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取完整K线数据"""
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=10)
+        
+        data = {
+            "stock_codes": sample_stock_codes[:1],
+            "start_time": start_date.strftime("%Y%m%d"),
+            "end_time": end_date.strftime("%Y%m%d"),
+            "period": "1d"
+        }
+        
+        response = http_client.post("/api/v1/data/full-kline", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📈 完整K线数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1500])
+        
+        # 验证K线字段完整性（11个字段）
+        if "data" in result:
+            data_obj = result["data"]
+            if isinstance(data_obj, dict):
+                for stock_code, kline_list in data_obj.items():
+                    if isinstance(kline_list, list) and len(kline_list) > 0:
+                        first_kline = kline_list[0]
+                        kline_fields = ["time", "open", "high", "low", "close", "volume",
+                                      "amount", "settle", "openInterest", "preClose", "suspendFlag"]
+                        found_fields = [f for f in kline_fields if f in first_kline]
+                        print(f"\n✓ K线字段数量: {len(found_fields)}/11")
+                        print(f"✓ 包含字段: {found_fields}")
+        
+        print("="*80)
+    
+    # ===== 阶段3: 数据下载接口测试 =====
+    
+    def test_download_history_data(self, http_client: httpx.Client, sample_stock_codes):
+        """测试下载历史数据（单只）"""
+        data = {
+            "stock_code": sample_stock_codes[0],
+            "period": "1d",
+            "start_time": "",
+            "end_time": "",
+            "incrementally": False
+        }
+        
+        response = http_client.post("/api/v1/data/download/history-data", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("⬇️  下载历史数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data_obj = result["data"]
+            assert "task_id" in data_obj
+            assert "status" in data_obj
+            print(f"\n✓ 任务ID: {data_obj.get('task_id')}")
+            print(f"✓ 任务状态: {data_obj.get('status')}")
+            print(f"✓ 进度: {data_obj.get('progress')}%")
+        
+        print("="*80)
+    
+    def test_download_history_data_batch(self, http_client: httpx.Client, sample_stock_codes):
+        """测试批量下载历史数据"""
+        data = {
+            "stock_list": sample_stock_codes[:3],
+            "period": "1d",
+            "start_time": "",
+            "end_time": ""
+        }
+        
+        response = http_client.post("/api/v1/data/download/history-data-batch", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("⬇️  批量下载历史数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data_obj = result["data"]
+            assert "task_id" in data_obj
+            print(f"\n✓ 批量任务ID: {data_obj.get('task_id')}")
+            print(f"✓ 总数: {data_obj.get('total')}")
+            print(f"✓ 已完成: {data_obj.get('finished')}")
+        
+        print("="*80)
+    
+    def test_download_financial_data(self, http_client: httpx.Client, sample_stock_codes):
+        """测试下载财务数据"""
+        data = {
+            "stock_list": [sample_stock_codes[0]],
+            "table_list": ["Capital"],
+            "start_date": "",
+            "end_date": ""
+        }
+        
+        response = http_client.post("/api/v1/data/download/financial-data", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("⬇️  下载财务数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    def test_download_sector_data(self, http_client: httpx.Client):
+        """测试下载板块数据"""
+        response = http_client.post("/api/v1/data/download/sector-data")
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("⬇️  下载板块数据测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    # ===== 阶段4: 板块管理接口测试 =====
+    
+    def test_create_sector_folder(self, http_client: httpx.Client):
+        """测试创建板块文件夹"""
+        data = {
+            "parent_node": "",
+            "folder_name": "测试文件夹_pytest",
+            "overwrite": True
+        }
+        
+        response = http_client.post("/api/v1/data/sector/create-folder", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📁 创建板块文件夹测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    def test_create_sector(self, http_client: httpx.Client):
+        """测试创建板块"""
+        data = {
+            "parent_node": "",
+            "sector_name": "测试板块_pytest",
+            "overwrite": True
+        }
+        
+        response = http_client.post("/api/v1/data/sector/create", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📊 创建板块测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        if "data" in result:
+            data_obj = result["data"]
+            if "created_name" in data_obj:
+                print(f"\n✓ 创建的板块名: {data_obj['created_name']}")
+        
+        print("="*80)
+    
+    def test_add_sector(self, http_client: httpx.Client, sample_stock_codes):
+        """测试添加股票到板块"""
+        data = {
+            "sector_name": "测试板块_pytest",
+            "stock_list": sample_stock_codes[:3]
+        }
+        
+        response = http_client.post("/api/v1/data/sector/add-stocks", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("➕ 添加股票到板块测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    def test_reset_sector(self, http_client: httpx.Client, sample_stock_codes):
+        """测试重置板块"""
+        data = {
+            "sector_name": "测试板块_pytest",
+            "stock_list": sample_stock_codes[:2]
+        }
+        
+        response = http_client.post("/api/v1/data/sector/reset", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("🔄 重置板块测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    def test_remove_stock_from_sector(self, http_client: httpx.Client, sample_stock_codes):
+        """测试从板块移除股票"""
+        data = {
+            "sector_name": "测试板块_pytest",
+            "stock_list": [sample_stock_codes[0]]
+        }
+        
+        response = http_client.post("/api/v1/data/sector/remove-stocks", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("➖ 从板块移除股票测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    def test_remove_sector(self, http_client: httpx.Client):
+        """测试删除板块"""
+        data = {"sector_name": "测试板块_pytest"}
+        
+        response = http_client.post("/api/v1/data/sector/remove", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("🗑️  删除板块测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        print("="*80)
+    
+    # ===== 阶段5: Level2数据接口测试 =====
+    
+    def test_get_l2_quote(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取Level2快照数据（10档）"""
+        data = {
+            "stock_codes": [sample_stock_codes[0]],
+            "start_time": "",
+            "end_time": ""
+        }
+        
+        response = http_client.post("/api/v1/data/l2/quote", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📊 Level2快照数据测试（10档）:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1500])
+        
+        # 验证10档行情字段
+        if "data" in result:
+            data_obj = result["data"]
+            if isinstance(data_obj, dict):
+                for stock_code, quote_list in data_obj.items():
+                    if isinstance(quote_list, list) and len(quote_list) > 0:
+                        first_quote = quote_list[0]
+                        # 验证10档价格和量
+                        if "ask_price" in first_quote:
+                            ask_price = first_quote["ask_price"]
+                            if isinstance(ask_price, list):
+                                print(f"\n✓ 委卖价档数: {len(ask_price)}")
+                                assert len(ask_price) <= 10, "委卖价不应超过10档"
+                        
+                        if "bid_price" in first_quote:
+                            bid_price = first_quote["bid_price"]
+                            if isinstance(bid_price, list):
+                                print(f"✓ 委买价档数: {len(bid_price)}")
+                                assert len(bid_price) <= 10, "委买价不应超过10档"
+        
+        print("="*80)
+    
+    def test_get_l2_order(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取Level2逐笔委托"""
+        data = {
+            "stock_codes": [sample_stock_codes[0]],
+            "start_time": "",
+            "end_time": ""
+        }
+        
+        response = http_client.post("/api/v1/data/l2/order", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("📝 Level2逐笔委托测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1000])
+        
+        print("="*80)
+    
+    def test_get_l2_transaction(self, http_client: httpx.Client, sample_stock_codes):
+        """测试获取Level2逐笔成交"""
+        data = {
+            "stock_codes": [sample_stock_codes[0]],
+            "start_time": "",
+            "end_time": ""
+        }
+        
+        response = http_client.post("/api/v1/data/l2/transaction", json=data)
+        assert response.status_code == 200
+        
+        result = response.json()
+        print("\n" + "="*80)
+        print("💹 Level2逐笔成交测试:")
+        print("="*80)
+        
+        import json
+        print(json.dumps(result, indent=2, ensure_ascii=False)[:1000])
+        
+        print("="*80)
+

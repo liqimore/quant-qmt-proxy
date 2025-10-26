@@ -258,6 +258,34 @@ class DataDirResponse(BaseModel):
 
 # ==================== 阶段2: 行情数据获取接口模型 ====================
 
+class LocalDataRequest(BaseModel):
+    """本地行情数据请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间，YYYYMMDD格式")
+    end_time: str = Field("", description="结束时间，YYYYMMDD格式")
+    period: str = Field("1d", description="K线周期")
+
+
+class FullTickRequest(BaseModel):
+    """完整tick数据请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间")
+    end_time: str = Field("", description="结束时间")
+
+
+class DividFactorsRequest(BaseModel):
+    """除权除息数据请求"""
+    stock_code: str = Field(..., description="股票代码")
+
+
+class FullKlineRequest(BaseModel):
+    """完整K线数据请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间，YYYYMMDD格式")
+    end_time: str = Field("", description="结束时间，YYYYMMDD格式")
+    period: str = Field("1d", description="K线周期")
+
+
 class DividendFactor(BaseModel):
     """除权数据（get_divid_factors返回，包含xtdata所有字段）"""
     time: str = Field(..., description="除权日期")
@@ -301,6 +329,31 @@ class DownloadTaskStatus(str, Enum):
     FAILED = "failed"
 
 
+class DownloadHistoryDataRequest(BaseModel):
+    """下载历史数据请求"""
+    stock_code: str = Field(..., description="股票代码")
+    period: str = Field("1d", description="周期")
+    start_time: str = Field("", description="起始时间")
+    end_time: str = Field("", description="结束时间")
+    incrementally: bool = Field(False, description="是否增量下载")
+
+
+class DownloadHistoryDataBatchRequest(BaseModel):
+    """批量下载历史数据请求"""
+    stock_list: List[str] = Field(..., description="股票代码列表")
+    period: str = Field("1d", description="周期")
+    start_time: str = Field("", description="起始时间")
+    end_time: str = Field("", description="结束时间")
+
+
+class DownloadFinancialDataRequest(BaseModel):
+    """下载财务数据请求"""
+    stock_list: List[str] = Field(..., description="股票代码列表")
+    table_list: List[str] = Field(..., description="财务表列表")
+    start_date: str = Field("", description="起始日期")
+    end_date: str = Field("", description="结束日期")
+
+
 class DownloadRequest(BaseModel):
     """数据下载请求"""
     stock_codes: List[str] = Field(..., description="股票代码列表")
@@ -333,6 +386,8 @@ class SectorCreateRequest(BaseModel):
 class SectorCreateResponse(BaseModel):
     """创建板块响应"""
     created_name: str = Field(..., description="实际创建的板块名称")
+    success: bool = Field(True, description="是否成功")
+    message: str = Field("", description="响应消息")
 
 
 class SectorAddRequest(BaseModel):
@@ -354,6 +409,27 @@ class SectorResetRequest(BaseModel):
 
 
 # ==================== 阶段5: Level2数据接口模型 ====================
+
+class L2QuoteRequest(BaseModel):
+    """Level2快照数据请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间")
+    end_time: str = Field("", description="结束时间")
+
+
+class L2OrderRequest(BaseModel):
+    """Level2逐笔委托请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间")
+    end_time: str = Field("", description="结束时间")
+
+
+class L2TransactionRequest(BaseModel):
+    """Level2逐笔成交请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    start_time: str = Field("", description="开始时间")
+    end_time: str = Field("", description="结束时间")
+
 
 class L2QuoteData(BaseModel):
     """Level2快照数据（包含xtdata所有l2quote字段）"""
