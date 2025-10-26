@@ -36,6 +36,7 @@ from app.models.data_models import (
 from app.utils.exceptions import DataServiceException
 from app.utils.helpers import serialize_data, validate_stock_code, validate_date_range
 from app.config import Settings, XTQuantMode
+from app.utils.logger import logger
 
 
 class DataService:
@@ -92,9 +93,9 @@ class DataService:
             
             if client and hasattr(client, 'is_connected') and client.is_connected():
                 self._initialized = True
-                print(f"  ✓ xtdata 已连接")
+                logger.info("xtdata 已连接")
             elif connect_thread.is_alive():
-                print(f"  ⚠ xtdata 连接超时，使用模拟数据（请检查QMT是否运行）")
+                logger.warning("xtdata 连接超时，使用模拟数据（请检查QMT是否运行）")
                 self._initialized = False
             else:
                 self._initialized = False
@@ -103,7 +104,7 @@ class DataService:
             self._initialized = False
             raise
         except Exception as e:
-            print(f"  ⚠ xtdata 连接失败: {e}")
+            logger.warning(f"xtdata 连接失败: {e}")
             self._initialized = False
     
     def _should_use_real_data(self) -> bool:
@@ -126,7 +127,7 @@ class DataService:
                     # 使用真实xtdata接口
                     try:
                         # 先下载历史数据（确保本地有数据）
-                        print(f"   📥 下载历史数据...")
+                        logger.debug("下载历史数据...")
                         xtdata.download_history_data(
                             stock_code=stock_code,
                             period=request.period.value,
@@ -145,33 +146,32 @@ class DataService:
                             dividend_type=request.adjust_type or "none"
                         )
                         
-                        print(f"   ✅ 获取成功，原始数据类型: {type(data)}")
+                        logger.debug(f"获取成功，原始数据类型: {type(data)}")
                         if hasattr(data, 'shape'):
-                            print(f"   数据形状: {data.shape}")
+                            logger.debug(f"数据形状: {data.shape}")
                         
                         # 打印原始数据结构用于调试
                         if isinstance(data, dict):
-                            print(f"   数据字典keys: {list(data.keys())}")
+                            logger.debug(f"数据字典keys: {list(data.keys())}")
                             for k, v in data.items():
-                                print(f"   [{k}] 类型: {type(v)}, 形状: {v.shape if hasattr(v, 'shape') else 'N/A'}")
+                                logger.debug(f"[{k}] 类型: {type(v)}, 形状: {v.shape if hasattr(v, 'shape') else 'N/A'}")
                                 if hasattr(v, 'head'):
-                                    print(f"   前几行:\n{v.head()}")
+                                    logger.debug(f"前几行:\n{v.head()}")
                         
                         # 转换数据格式
                         formatted_data = self._format_market_data(data, request.fields)
-                        print(f"   格式化后数据条数: {len(formatted_data)}")
+                        logger.debug(f"格式化后数据条数: {len(formatted_data)}")
                         if formatted_data:
-                            print(f"   格式化后首条数据: {formatted_data[0]}")
+                            logger.debug(f"格式化后首条数据: {formatted_data[0]}")
                         
                     except Exception as e:
-                        print(f"   ❌ 获取真实数据失败: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        logger.error(f"获取真实数据失败: {e}")
+                        logger.exception(e)
                         # dev/real模式下直接抛出异常，不回退到mock
                         raise DataServiceException(f"获取市场数据失败 [{stock_code}]: {str(e)}")
                 else:
                     # 使用模拟数据（仅mock模式）
-                    print(f"\n🎭 使用模拟数据 for {stock_code}")
+                    logger.debug(f"使用模拟数据 for {stock_code}")
                     formatted_data = self._get_mock_market_data(stock_code, request)
                 
                 response = MarketDataResponse(
@@ -191,10 +191,10 @@ class DataService:
     
     def get_financial_data(self, request: FinancialDataRequest) -> List[FinancialDataResponse]:
         """获取财务数据"""
-        print(f"\n💰 获取财务数据请求:")
-        print(f"   股票代码: {request.stock_codes}")
-        print(f"   表名: {request.table_list}")
-        print(f"   使用真实数据: {self._should_use_real_data()}")
+        logger.debug("获取财务数据请求:")
+        logger.debug(f"股票代码: {request.stock_codes}")
+        logger.debug(f"表名: {request.table_list}")
+        logger.debug(f"使用真实数据: {self._should_use_real_data()}")
         
         try:
             results = []
@@ -202,7 +202,7 @@ class DataService:
                 for table_name in request.table_list:
                     if self._should_use_real_data():
                         # 使用真实xtdata接口
-                        print(f"\n🔍 正在获取 {stock_code} 的 {table_name} 财务数据...")
+                        logger.debug(f"正在获取 {stock_code} 的 {table_name} 财务数据...")
                         try:
                             # 注意：第一个参数必须是列表
                             data = xtdata.get_financial_data(
@@ -212,16 +212,16 @@ class DataService:
                                 end_time=request.end_date
                             )
                             
-                            print(f"   ✅ 获取成功，数据类型: {type(data)}")
-                            print(f"   数据内容: {data}")
+                            logger.debug(f"获取成功，数据类型: {type(data)}")
+                            logger.debug(f"数据内容: {data}")
                             
                             # 转换数据格式
                             # xtdata返回格式: {stock_code: {table_name: DataFrame}}
                             formatted_data = self._format_financial_data(data, stock_code, table_name)
-                            print(f"   格式化后数据条数: {len(formatted_data)}")
+                            logger.debug(f"格式化后数据条数: {len(formatted_data)}")
                             
                         except Exception as e:
-                            print(f"   ❌ 获取真实财务数据失败: {e}")
+                            logger.error(f"获取真实财务数据失败: {e}")
                             # dev/real模式下直接抛出异常，不回退到mock
                             raise DataServiceException(f"获取财务数据失败 [{stock_code}/{table_name}]: {str(e)}")
                     else:
@@ -263,7 +263,7 @@ class DataService:
                     return results
                     
                 except Exception as e:
-                    print(f"获取真实板块数据失败: {e}")
+                    logger.error(f"获取真实板块数据失败: {e}")
                     # dev/real模式下直接抛出异常，不回退到mock
                     raise DataServiceException(f"获取板块列表失败: {str(e)}")
             
@@ -301,7 +301,7 @@ class DataService:
                     # 返回的是当前最新的指数成分权重
                     weights_data = xtdata.get_index_weight(request.index_code)
                     
-                    print(f"   获取指数权重成功，数据类型: {type(weights_data)}")
+                    logger.debug(f"获取指数权重成功，数据类型: {type(weights_data)}")
                     
                     # 转换数据格式
                     if isinstance(weights_data, dict):
@@ -316,7 +316,7 @@ class DataService:
                     elif isinstance(weights_data, list):
                         formatted_weights = self._format_index_weight(weights_data)
                     else:
-                        print(f"   ⚠️  未知的权重数据格式: {type(weights_data)}")
+                        logger.warning(f"未知的权重数据格式: {type(weights_data)}")
                         formatted_weights = []
                     
                     return IndexWeightResponse(
@@ -326,9 +326,8 @@ class DataService:
                     )
                     
                 except Exception as e:
-                    print(f"获取真实指数权重失败: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    logger.error(f"获取真实指数权重失败: {e}")
+                    logger.exception(e)
                     # dev/real模式下直接抛出异常，不回退到mock
                     raise DataServiceException(f"获取指数权重失败 [{request.index_code}]: {str(e)}")
             
@@ -385,9 +384,8 @@ class DataService:
                     )
                     
                 except Exception as e:
-                    print(f"获取真实交易日历失败: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    logger.error(f"获取真实交易日历失败: {e}")
+                    logger.exception(e)
                     # dev/real模式下直接抛出异常，不回退到mock
                     raise DataServiceException(f"获取交易日历失败 [{year}]: {str(e)}")
             
@@ -456,7 +454,7 @@ class DataService:
                     )
                     
                 except Exception as e:
-                    print(f"获取真实合约信息失败: {e}")
+                    logger.error(f"获取真实合约信息失败: {e}")
                     # dev/real模式下直接抛出异常，不回退到mock
                     raise DataServiceException(f"获取合约信息失败 [{stock_code}]: {str(e)}")
             
@@ -484,7 +482,7 @@ class DataService:
         if not data:
             return []
         
-        print(f"   📝 格式化数据，类型: {type(data)}")
+        logger.debug(f"格式化数据，类型: {type(data)}")
         
         formatted_data = []
         
@@ -502,7 +500,7 @@ class DataService:
                 
                 # 获取所有日期（DataFrame的列）
                 dates = list(first_df.columns)
-                print(f"   处理股票: {stock_code}, 日期数: {len(dates)}")
+                logger.debug(f"处理股票: {stock_code}, 日期数: {len(dates)}")
                 
                 # 遍历每个日期，构建记录
                 for date in dates:
@@ -534,18 +532,18 @@ class DataService:
                                 else:
                                     record[field] = value
                             except Exception as e:
-                                print(f"   ⚠️  获取字段 {field} 失败: {e}")
+                                logger.warning(f"获取字段 {field} 失败: {e}")
                     
                     formatted_data.append(record)
                 
-                print(f"   ✅ 格式化完成，共 {len(formatted_data)} 条记录")
+                logger.debug(f"格式化完成，共 {len(formatted_data)} 条记录")
                 if formatted_data:
-                    print(f"   首条: {formatted_data[0]}")
-                    print(f"   末条: {formatted_data[-1]}")
+                    logger.debug(f"首条: {formatted_data[0]}")
+                    logger.debug(f"末条: {formatted_data[-1]}")
             else:
-                print(f"   ⚠️  DataFrame格式不符合预期")
+                logger.warning("DataFrame格式不符合预期")
         else:
-            print(f"   ⚠️  未知数据格式: {type(data)}")
+            logger.warning(f"未知数据格式: {type(data)}")
         
         return formatted_data
     
@@ -586,9 +584,8 @@ class DataService:
             return formatted_data
             
         except Exception as e:
-            print(f"   ❌ DataFrame转换失败: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"DataFrame转换失败: {e}")
+            logger.exception(e)
             return []
     
     def _format_financial_data(self, data: Any, stock_code: str, table_name: str) -> List[Dict[str, Any]]:
@@ -608,13 +605,13 @@ class DataService:
                         
                         # 检查DataFrame是否为空
                         if hasattr(df, 'empty') and df.empty:
-                            print(f"   ⚠️  DataFrame为空")
+                            logger.warning("DataFrame为空")
                             return []
                         
                         # 将DataFrame转换为字典列表
                         if hasattr(df, 'to_dict'):
-                            print(f"   DataFrame形状: {df.shape}")
-                            print(f"   DataFrame列: {list(df.columns) if hasattr(df, 'columns') else 'N/A'}")
+                            logger.debug(f"DataFrame形状: {df.shape}")
+                            logger.debug(f"DataFrame列: {list(df.columns) if hasattr(df, 'columns') else 'N/A'}")
                             
                             # 重置索引，将索引变成列
                             df_reset = df.reset_index()
@@ -634,19 +631,18 @@ class DataService:
                             
                             return formatted_data
                         else:
-                            print(f"   ⚠️  不是DataFrame: {type(df)}")
+                            logger.warning(f"不是DataFrame: {type(df)}")
                             return []
                 else:
-                    print(f"   ⚠️  股票代码 {stock_code} 不在返回数据中")
+                    logger.warning(f"股票代码 {stock_code} 不在返回数据中")
                     return []
             else:
-                print(f"   ⚠️  未知数据格式: {type(data)}")
+                logger.warning(f"未知数据格式: {type(data)}")
                 return []
                 
         except Exception as e:
-            print(f"   ❌ 格式化财务数据失败: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"格式化财务数据失败: {e}")
+            logger.exception(e)
             return []
     
     def _format_index_weight(self, weights: Any) -> List[Dict[str, Any]]:

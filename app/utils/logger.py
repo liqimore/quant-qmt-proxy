@@ -5,6 +5,77 @@
 from loguru import logger
 from typing import Any, Dict, Optional
 import sys
+import os
+
+
+def configure_logging(log_level: str = "INFO", 
+                     log_file: str = "logs/app.log",
+                     error_log_file: str = "logs/error.log",
+                     log_format: str = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+                     rotation: str = "10 MB",
+                     retention: str = "30 days",
+                     compression: str = "zip"):
+    """
+    配置日志系统，同时输出到控制台和文件
+    
+    Args:
+        log_level: 日志级别
+        log_file: 普通日志文件路径
+        error_log_file: 错误日志文件路径
+        log_format: 日志格式
+        rotation: 日志轮转大小
+        retention: 日志保留时间
+        compression: 压缩格式
+    """
+    # 移除默认的handler
+    logger.remove()
+    
+    # 创建日志目录
+    log_dir = os.path.dirname(log_file)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    
+    error_log_dir = os.path.dirname(error_log_file)
+    if error_log_dir and not os.path.exists(error_log_dir):
+        os.makedirs(error_log_dir, exist_ok=True)
+    
+    # 1. 添加控制台输出（带颜色）
+    logger.add(
+        sys.stdout,
+        format=log_format,
+        level=log_level,
+        colorize=True,
+        backtrace=True,
+        diagnose=False
+    )
+    
+    # 2. 添加普通日志文件（所有级别）
+    logger.add(
+        log_file,
+        format=log_format,
+        level=log_level,
+        rotation=rotation,
+        retention=retention,
+        compression=compression,
+        encoding="utf-8",
+        backtrace=True,
+        diagnose=False
+    )
+    
+    # 3. 添加错误日志文件（仅ERROR及以上级别）
+    logger.add(
+        error_log_file,
+        format=log_format,
+        level="ERROR",
+        rotation=rotation,
+        retention=retention,
+        compression=compression,
+        encoding="utf-8",
+        backtrace=True,
+        diagnose=True  # 错误日志启用详细诊断
+    )
+    
+    logger.info(f"日志系统已初始化 [level={log_level}, file={log_file}]")
 
 
 def get_logger(name: Optional[str] = None):
@@ -188,6 +259,7 @@ def log_data_operation(operation: str, stock_code: Optional[str] = None, count: 
 
 # 导出常用的logger方法，方便直接导入使用
 __all__ = [
+    'configure_logging',
     'get_logger',
     'logger',
     'log_function_call',

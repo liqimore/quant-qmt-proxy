@@ -13,8 +13,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.config import get_settings, Settings
 from app.routers import health, data, trading
-from app.utils.helpers import setup_logging, format_response
+from app.utils.helpers import format_response
 from app.utils.exceptions import XTQuantException, handle_xtquant_exception
+from app.utils.logger import configure_logging, logger
 
 
 @asynccontextmanager
@@ -22,25 +23,24 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
     settings = get_settings()
-    setup_logging(
+    
+    # 初始化日志系统
+    configure_logging(
         log_level=settings.logging.level,
-        log_file=settings.logging.file,
-        error_file=settings.logging.error_file,
+        log_file=settings.logging.file or "logs/app.log",
+        error_log_file=settings.logging.error_file or "logs/error.log",
         log_format=settings.logging.format,
         rotation=settings.logging.rotation,
         retention=settings.logging.retention,
-        compression=settings.logging.compression,
-        console_output=settings.logging.console_output,
-        backtrace=settings.logging.backtrace,
-        diagnose=settings.logging.diagnose
+        compression=settings.logging.compression
     )
     
-    print("✓ REST API 服务已就绪")
+    logger.info("REST API 服务已就绪")
     
     yield
     
     # 关闭时执行
-    print("✓ REST API 服务正在关闭...")
+    logger.info("REST API 服务正在关闭...")
 
 
 # 创建FastAPI应用

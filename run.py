@@ -45,21 +45,18 @@ if __name__ == '__main__':
     
     # 加载配置（单例模式，仅加载一次）
     from app.config import get_settings
-    from app.utils.helpers import setup_logging
+    from app.utils.logger import configure_logging
     settings = get_settings()
     
     # 初始化日志系统
-    setup_logging(
+    configure_logging(
         log_level=settings.logging.level,
-        log_file=settings.logging.file,
-        error_file=settings.logging.error_file,
+        log_file=settings.logging.file or "logs/app.log",
+        error_log_file=settings.logging.error_file or "logs/error.log",
         log_format=settings.logging.format,
         rotation=settings.logging.rotation,
         retention=settings.logging.retention,
-        compression=settings.logging.compression,
-        console_output=settings.logging.console_output,
-        backtrace=settings.logging.backtrace,
-        diagnose=settings.logging.diagnose
+        compression=settings.logging.compression
     )
     
     # 打印启动信息
