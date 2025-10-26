@@ -410,20 +410,49 @@ class DataService:
             raise DataServiceException(f"获取交易日历失败: {str(e)}")
     
     def get_instrument_info(self, stock_code: str) -> InstrumentInfo:
-        """获取合约信息"""
+        """获取合约信息（返回完整字段）"""
         try:
             if self._should_use_real_data():
                 # 使用真实xtdata接口
                 try:
                     info = xtdata.get_instrument_detail(stock_code)
                     
+                    # 返回完整的合约信息（保留所有xtquant字段）
                     return InstrumentInfo(
+                        # xtquant原始字段
+                        ExchangeID=info.get("ExchangeID"),
+                        InstrumentID=info.get("InstrumentID"),
+                        InstrumentName=info.get("InstrumentName"),
+                        ProductID=info.get("ProductID"),
+                        ProductName=info.get("ProductName"),
+                        ProductType=info.get("ProductType"),
+                        ExchangeCode=info.get("ExchangeCode"),
+                        UniCode=info.get("UniCode"),
+                        CreateDate=info.get("CreateDate"),
+                        OpenDate=info.get("OpenDate"),
+                        ExpireDate=info.get("ExpireDate"),
+                        PreClose=info.get("PreClose"),
+                        SettlementPrice=info.get("SettlementPrice"),
+                        UpStopPrice=info.get("UpStopPrice"),
+                        DownStopPrice=info.get("DownStopPrice"),
+                        FloatVolume=info.get("FloatVolume") or info.get("FloatVolumn"),  # 兼容旧版本拼写错误
+                        TotalVolume=info.get("TotalVolume") or info.get("TotalVolumn"),  # 兼容旧版本拼写错误
+                        LongMarginRatio=info.get("LongMarginRatio"),
+                        ShortMarginRatio=info.get("ShortMarginRatio"),
+                        PriceTick=info.get("PriceTick"),
+                        VolumeMultiple=info.get("VolumeMultiple"),
+                        MainContract=info.get("MainContract"),
+                        LastVolume=info.get("LastVolume"),
+                        InstrumentStatus=info.get("InstrumentStatus"),
+                        IsTrading=info.get("IsTrading"),
+                        IsRecent=info.get("IsRecent"),
+                        # 兼容旧字段
                         instrument_code=stock_code,
-                        instrument_name=info.get("instrument_name", f"股票{stock_code}"),
-                        market_type=info.get("market_type", "SH"),
-                        instrument_type=info.get("instrument_type", "STOCK"),
-                        list_date=info.get("list_date"),
-                        delist_date=info.get("delist_date")
+                        instrument_name=info.get("InstrumentName", f"股票{stock_code}"),
+                        market_type=info.get("ExchangeID", "SH"),
+                        instrument_type=info.get("ProductType", "STOCK"),
+                        list_date=info.get("OpenDate"),
+                        delist_date=str(info.get("ExpireDate")) if info.get("ExpireDate") and info.get("ExpireDate") not in [0, 99999999] else None
                     )
                     
                 except Exception as e:
@@ -438,7 +467,10 @@ class DataService:
                 market_type="SH" if stock_code.endswith(".SH") else "SZ",
                 instrument_type="STOCK",
                 list_date="20200101",
-                delist_date=None
+                delist_date=None,
+                InstrumentID=stock_code,
+                InstrumentName=f"股票{stock_code}",
+                ExchangeID="SH" if stock_code.endswith(".SH") else "SZ"
             )
             
         except Exception as e:
@@ -488,14 +520,14 @@ class DataService:
                     else:
                         record['time'] = str(date)
                     
-                    # 添加其他字段
-                    for field in ['open', 'high', 'low', 'close', 'volume', 'amount']:
+                    # 添加其他字段 (包含xtquant所有K线字段)
+                    for field in ['open', 'high', 'low', 'close', 'volume', 'amount', 'settle', 'openInterest', 'preClose', 'suspendFlag']:
                         if field in data:
                             try:
                                 value = data[field].loc[stock_code, date]
                                 # 转换为Python原生类型
                                 if hasattr(value, 'item'):  # numpy类型
-                                    if field == 'volume':
+                                    if field in ['volume', 'openInterest', 'suspendFlag']:
                                         record[field] = int(value)
                                     else:
                                         record[field] = float(value)
@@ -536,13 +568,16 @@ class DataService:
                 elif 'index' in record:
                     formatted_item['time'] = str(record['index'])
                 
-                # 处理数据字段
-                for field in ['open', 'high', 'low', 'close', 'volume', 'amount']:
+                # 处理所有K线数据字段（与_format_market_data保持一致）
+                for field in ['open', 'high', 'low', 'close', 'volume', 'amount', 'settle', 'openInterest', 'preClose', 'suspendFlag']:
                     if field in record:
                         value = record[field]
                         # 转换为Python原生类型
                         if hasattr(value, 'item'):  # numpy类型
-                            formatted_item[field] = float(value) if field != 'volume' else int(value)
+                            if field in ['volume', 'openInterest', 'suspendFlag']:
+                                formatted_item[field] = int(value)
+                            else:
+                                formatted_item[field] = float(value)
                         else:
                             formatted_item[field] = value
                 
@@ -632,7 +667,7 @@ class DataService:
         return formatted_weights
     
     def _get_mock_market_data(self, stock_code: str, request: MarketDataRequest) -> List[Dict[str, Any]]:
-        """生成模拟市场数据"""
+        """生成模拟市场数据（包含所有K线字段）"""
         import random
         from datetime import datetime, timedelta
         
@@ -642,15 +677,26 @@ class DataService:
         for i in range(10):  # 生成10天的模拟数据
             date = start_date + timedelta(days=i)
             base_price = 100 + random.uniform(-10, 10)
+            open_price = round(base_price + random.uniform(-2, 2), 2)
+            high_price = round(base_price + random.uniform(0, 5), 2)
+            low_price = round(base_price - random.uniform(0, 5), 2)
+            close_price = round(base_price + random.uniform(-3, 3), 2)
             
-            data.append({
+            record = {
                 "time": date.strftime("%Y%m%d"),
-                "open": round(base_price + random.uniform(-2, 2), 2),
-                "high": round(base_price + random.uniform(0, 5), 2),
-                "low": round(base_price - random.uniform(0, 5), 2),
-                "close": round(base_price + random.uniform(-3, 3), 2),
-                "volume": random.randint(1000000, 10000000)
-            })
+                "open": open_price,
+                "high": high_price,
+                "low": low_price,
+                "close": close_price,
+                "volume": random.randint(1000000, 10000000),
+                "amount": round(close_price * random.randint(1000000, 10000000), 2),
+                "settle": round(close_price * random.uniform(0.98, 1.02), 2),  # 今结算（期货）
+                "openInterest": random.randint(100000, 1000000),  # 持仓量（期货）
+                "preClose": round(base_price, 2),  # 前收盘价
+                "suspendFlag": 0  # 停牌标志（0=正常）
+            }
+            
+            data.append(record)
         
         return data
     
