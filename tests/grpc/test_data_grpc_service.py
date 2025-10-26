@@ -539,6 +539,524 @@ class TestDataGrpcService:
             pass
 
 
+# ==================== 新增接口测试（阶段1-5）====================
+
+class TestNewDataGrpcApis:
+    """新增数据服务 gRPC 接口测试"""
+    
+    @pytest.fixture(scope="class")
+    def grpc_channel(self):
+        """创建 gRPC 连接通道"""
+        channel = grpc.insecure_channel('localhost:50051')
+        yield channel
+        channel.close()
+    
+    @pytest.fixture(scope="class")
+    def data_stub(self, grpc_channel):
+        """创建数据服务 stub"""
+        from generated import data_pb2_grpc
+        return data_pb2_grpc.DataServiceStub(grpc_channel)
+    
+    # ===== 阶段1: 基础信息接口测试 =====
+    
+    def test_get_instrument_type(self, data_stub):
+        """测试获取合约类型"""
+        from generated import data_pb2
+        
+        request = data_pb2.InstrumentTypeRequest(stock_code='000001.SZ')
+        response = data_stub.GetInstrumentType(request)
+        
+        print("\n" + "="*80)
+        print("📊 [gRPC] 合约类型测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        print(f"消息: {response.status.message}")
+        
+        if response.status.code == 0:
+            print(f"股票代码: {response.data.stock_code}")
+            print(f"是否股票: {response.data.stock}")
+            print(f"是否指数: {response.data.index}")
+            print(f"是否ETF: {response.data.etf}")
+            
+            assert response.data.stock_code == '000001.SZ'
+        
+        print("="*80)
+    
+    def test_get_holidays(self, data_stub):
+        """测试获取节假日列表"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.GetHolidays(request)
+        
+        print("\n" + "="*80)
+        print("🎊 [gRPC] 节假日列表测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"节假日数量: {len(response.holidays)}")
+            if len(response.holidays) > 0:
+                print(f"前5个节假日: {list(response.holidays[:5])}")
+        
+        print("="*80)
+    
+    def test_get_convertible_bond_info(self, data_stub):
+        """测试获取可转债信息"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.GetConvertibleBondInfo(request)
+        
+        print("\n" + "="*80)
+        print("🔄 [gRPC] 可转债信息测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"可转债数量: {len(response.bonds)}")
+            if len(response.bonds) > 0:
+                first_bond = response.bonds[0]
+                print(f"第一只可转债代码: {first_bond.bond_code}")
+                print(f"可转债名称: {first_bond.bond_name}")
+        
+        print("="*80)
+    
+    def test_get_ipo_info_grpc(self, data_stub):
+        """测试获取新股申购信息"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.GetIpoInfo(request)
+        
+        print("\n" + "="*80)
+        print("🆕 [gRPC] 新股申购信息测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"新股数量: {len(response.ipos)}")
+            if len(response.ipos) > 0:
+                first_ipo = response.ipos[0]
+                print(f"第一只新股代码: {first_ipo.security_code}")
+                print(f"新股名称: {first_ipo.code_name}")
+        
+        print("="*80)
+    
+    def test_get_period_list(self, data_stub):
+        """测试获取可用周期列表"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.GetPeriodList(request)
+        
+        print("\n" + "="*80)
+        print("📅 [gRPC] 可用周期列表测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"可用周期: {list(response.periods)}")
+            assert len(response.periods) > 0
+        
+        print("="*80)
+    
+    def test_get_data_dir(self, data_stub):
+        """测试获取本地数据路径"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.GetDataDir(request)
+        
+        print("\n" + "="*80)
+        print("📁 [gRPC] 本地数据路径测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"数据路径: {response.data_dir}")
+            assert len(response.data_dir) > 0
+        
+        print("="*80)
+    
+    # ===== 阶段2: 行情数据获取接口测试 =====
+    
+    def test_get_local_data(self, data_stub):
+        """测试获取本地行情数据"""
+        from generated import data_pb2
+        from datetime import datetime, timedelta
+        
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=10)
+        
+        request = data_pb2.LocalDataRequest(
+            stock_codes=['000001.SZ'],
+            start_time=start_date.strftime("%Y%m%d"),
+            end_time=end_date.strftime("%Y%m%d"),
+            period='1d'
+        )
+        response = data_stub.GetLocalData(request)
+        
+        print("\n" + "="*80)
+        print("📊 [gRPC] 本地行情数据测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, kline_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"K线数量: {len(kline_list.bars)}")
+        
+        print("="*80)
+    
+    def test_get_full_tick(self, data_stub):
+        """测试获取完整tick数据"""
+        from generated import data_pb2
+        
+        request = data_pb2.FullTickRequest(
+            stock_codes=['000001.SZ'],
+            start_time='',
+            end_time=''
+        )
+        response = data_stub.GetFullTick(request)
+        
+        print("\n" + "="*80)
+        print("⏱️  [gRPC] 完整Tick数据测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, tick_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"Tick数量: {len(tick_list.ticks)}")
+                if len(tick_list.ticks) > 0:
+                    first_tick = tick_list.ticks[0]
+                    print(f"最新价: {first_tick.last_price}")
+        
+        print("="*80)
+    
+    def test_get_divid_factors(self, data_stub):
+        """测试获取除权除息数据"""
+        from generated import data_pb2
+        
+        request = data_pb2.DividFactorsRequest(stock_code='000001.SZ')
+        response = data_stub.GetDividFactors(request)
+        
+        print("\n" + "="*80)
+        print("💰 [gRPC] 除权除息数据测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"除权记录数: {len(response.factors)}")
+        
+        print("="*80)
+    
+    def test_get_full_kline(self, data_stub):
+        """测试获取完整K线数据"""
+        from generated import data_pb2
+        from datetime import datetime, timedelta
+        
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=10)
+        
+        request = data_pb2.FullKlineRequest(
+            stock_codes=['000001.SZ'],
+            start_time=start_date.strftime("%Y%m%d"),
+            end_time=end_date.strftime("%Y%m%d"),
+            period='1d'
+        )
+        response = data_stub.GetFullKline(request)
+        
+        print("\n" + "="*80)
+        print("📈 [gRPC] 完整K线数据测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, kline_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"K线数量: {len(kline_list.bars)}")
+        
+        print("="*80)
+    
+    # ===== 阶段3: 数据下载接口测试 =====
+    
+    def test_download_history_data(self, data_stub):
+        """测试下载历史数据"""
+        from generated import data_pb2
+        
+        request = data_pb2.DownloadHistoryDataRequest(
+            stock_code='000001.SZ',
+            period='1d',
+            start_time='',
+            end_time='',
+            incrementally=False
+        )
+        response = data_stub.DownloadHistoryData(request)
+        
+        print("\n" + "="*80)
+        print("⬇️  [gRPC] 下载历史数据测试:")
+        print("="*80)
+        print(f"RPC状态码: {response.rpc_status.code}")
+        
+        if response.rpc_status.code == 0:
+            print(f"任务ID: {response.task_id}")
+            print(f"任务状态: {response.status}")
+            print(f"进度: {response.progress}%")
+        
+        print("="*80)
+    
+    def test_download_history_data_batch(self, data_stub):
+        """测试批量下载历史数据"""
+        from generated import data_pb2
+        
+        request = data_pb2.DownloadHistoryDataBatchRequest(
+            stock_list=['000001.SZ', '000002.SZ'],
+            period='1d',
+            start_time='',
+            end_time=''
+        )
+        response = data_stub.DownloadHistoryDataBatch(request)
+        
+        print("\n" + "="*80)
+        print("⬇️  [gRPC] 批量下载历史数据测试:")
+        print("="*80)
+        print(f"RPC状态码: {response.rpc_status.code}")
+        
+        if response.rpc_status.code == 0:
+            print(f"任务ID: {response.task_id}")
+            print(f"总数: {response.total}")
+            print(f"已完成: {response.finished}")
+        
+        print("="*80)
+    
+    def test_download_financial_data(self, data_stub):
+        """测试下载财务数据"""
+        from generated import data_pb2
+        
+        request = data_pb2.DownloadFinancialDataRequest(
+            stock_list=['000001.SZ'],
+            table_list=['Capital'],
+            start_date='',
+            end_date=''
+        )
+        response = data_stub.DownloadFinancialData(request)
+        
+        print("\n" + "="*80)
+        print("⬇️  [gRPC] 下载财务数据测试:")
+        print("="*80)
+        print(f"RPC状态码: {response.rpc_status.code}")
+        
+        print("="*80)
+    
+    def test_download_sector_data(self, data_stub):
+        """测试下载板块数据"""
+        from generated import data_pb2
+        from google.protobuf import empty_pb2
+        
+        request = empty_pb2.Empty()
+        response = data_stub.DownloadSectorData(request)
+        
+        print("\n" + "="*80)
+        print("⬇️  [gRPC] 下载板块数据测试:")
+        print("="*80)
+        print(f"RPC状态码: {response.rpc_status.code}")
+        
+        print("="*80)
+    
+    # ===== 阶段4: 板块管理接口测试 =====
+    
+    def test_create_sector_folder(self, data_stub):
+        """测试创建板块文件夹"""
+        from generated import data_pb2
+        
+        request = data_pb2.CreateSectorFolderRequest(
+            parent_node='',
+            folder_name='测试文件夹_grpc',
+            overwrite=True
+        )
+        response = data_stub.CreateSectorFolder(request)
+        
+        print("\n" + "="*80)
+        print("📁 [gRPC] 创建板块文件夹测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"创建的文件夹名: {response.created_name}")
+        
+        print("="*80)
+    
+    def test_create_sector(self, data_stub):
+        """测试创建板块"""
+        from generated import data_pb2
+        
+        request = data_pb2.CreateSectorRequest(
+            parent_node='',
+            sector_name='测试板块_grpc',
+            overwrite=True
+        )
+        response = data_stub.CreateSector(request)
+        
+        print("\n" + "="*80)
+        print("📊 [gRPC] 创建板块测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            print(f"创建的板块名: {response.created_name}")
+        
+        print("="*80)
+    
+    def test_add_sector(self, data_stub):
+        """测试添加股票到板块"""
+        from generated import data_pb2
+        
+        request = data_pb2.AddSectorRequest(
+            sector_name='测试板块_grpc',
+            stock_list=['000001.SZ', '000002.SZ']
+        )
+        response = data_stub.AddSector(request)
+        
+        print("\n" + "="*80)
+        print("➕ [gRPC] 添加股票到板块测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        print("="*80)
+    
+    def test_reset_sector(self, data_stub):
+        """测试重置板块"""
+        from generated import data_pb2
+        
+        request = data_pb2.ResetSectorRequest(
+            sector_name='测试板块_grpc',
+            stock_list=['000001.SZ']
+        )
+        response = data_stub.ResetSector(request)
+        
+        print("\n" + "="*80)
+        print("🔄 [gRPC] 重置板块测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        print(f"成功: {response.success}")
+        
+        print("="*80)
+    
+    def test_remove_stock_from_sector(self, data_stub):
+        """测试从板块移除股票"""
+        from generated import data_pb2
+        
+        request = data_pb2.RemoveStockFromSectorRequest(
+            sector_name='测试板块_grpc',
+            stock_list=['000001.SZ']
+        )
+        response = data_stub.RemoveStockFromSector(request)
+        
+        print("\n" + "="*80)
+        print("➖ [gRPC] 从板块移除股票测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        print(f"成功: {response.success}")
+        
+        print("="*80)
+    
+    def test_remove_sector(self, data_stub):
+        """测试删除板块"""
+        from generated import data_pb2
+        
+        request = data_pb2.RemoveSectorRequest(sector_name='测试板块_grpc')
+        response = data_stub.RemoveSector(request)
+        
+        print("\n" + "="*80)
+        print("🗑️  [gRPC] 删除板块测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        print("="*80)
+    
+    # ===== 阶段5: Level2数据接口测试 =====
+    
+    def test_get_l2_quote(self, data_stub):
+        """测试获取Level2快照数据（10档）"""
+        from generated import data_pb2
+        
+        request = data_pb2.L2QuoteRequest(
+            stock_codes=['000001.SZ'],
+            start_time='',
+            end_time=''
+        )
+        response = data_stub.GetL2Quote(request)
+        
+        print("\n" + "="*80)
+        print("📊 [gRPC] Level2快照数据测试（10档）:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, quote_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"快照数量: {len(quote_list.quotes)}")
+                if len(quote_list.quotes) > 0:
+                    first_quote = quote_list.quotes[0]
+                    print(f"委卖价档数: {len(first_quote.ask_price)}")
+                    print(f"委买价档数: {len(first_quote.bid_price)}")
+        
+        print("="*80)
+    
+    def test_get_l2_order(self, data_stub):
+        """测试获取Level2逐笔委托"""
+        from generated import data_pb2
+        
+        request = data_pb2.L2OrderRequest(
+            stock_codes=['000001.SZ'],
+            start_time='',
+            end_time=''
+        )
+        response = data_stub.GetL2Order(request)
+        
+        print("\n" + "="*80)
+        print("📝 [gRPC] Level2逐笔委托测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, order_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"委托数量: {len(order_list.orders)}")
+        
+        print("="*80)
+    
+    def test_get_l2_transaction(self, data_stub):
+        """测试获取Level2逐笔成交"""
+        from generated import data_pb2
+        
+        request = data_pb2.L2TransactionRequest(
+            stock_codes=['000001.SZ'],
+            start_time='',
+            end_time=''
+        )
+        response = data_stub.GetL2Transaction(request)
+        
+        print("\n" + "="*80)
+        print("💹 [gRPC] Level2逐笔成交测试:")
+        print("="*80)
+        print(f"状态码: {response.status.code}")
+        
+        if response.status.code == 0:
+            for stock_code, trans_list in response.data.items():
+                print(f"股票代码: {stock_code}")
+                print(f"成交数量: {len(trans_list.transactions)}")
+        
+        print("="*80)
+
+
 # ==================== 辅助函数 ====================
 
 def validate_kline_data(bars):
