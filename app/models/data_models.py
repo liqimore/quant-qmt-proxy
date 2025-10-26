@@ -170,3 +170,232 @@ class ETFInfoResponse(BaseModel):
     underlying_asset: str
     creation_unit: int
     redemption_unit: int
+
+
+# ==================== 阶段1: 基础信息接口模型 ====================
+
+class InstrumentTypeInfo(BaseModel):
+    """合约类型信息（get_instrument_type返回）"""
+    stock_code: str = Field(..., description="合约代码")
+    index: bool = Field(False, description="是否为指数")
+    stock: bool = Field(False, description="是否为股票")
+    fund: bool = Field(False, description="是否为基金")
+    etf: bool = Field(False, description="是否为ETF")
+    bond: bool = Field(False, description="是否为债券")
+    option: bool = Field(False, description="是否为期权")
+    futures: bool = Field(False, description="是否为期货")
+
+
+class HolidayInfo(BaseModel):
+    """节假日信息（get_holidays返回）"""
+    holidays: List[str] = Field(..., description="节假日列表，YYYYMMDD格式")
+
+
+class ConvertibleBondInfo(BaseModel):
+    """可转债信息（get_cb_info返回，包含xtdata所有字段）"""
+    # 基本信息
+    bond_code: str = Field(..., description="可转债代码")
+    bond_name: Optional[str] = Field(None, description="可转债名称")
+    stock_code: Optional[str] = Field(None, description="正股代码")
+    stock_name: Optional[str] = Field(None, description="正股名称")
+    
+    # 转股信息
+    conversion_price: Optional[float] = Field(None, description="转股价格")
+    conversion_value: Optional[float] = Field(None, description="转股价值")
+    conversion_premium_rate: Optional[float] = Field(None, description="转股溢价率")
+    
+    # 价格信息
+    current_price: Optional[float] = Field(None, description="可转债当前价格")
+    par_value: Optional[float] = Field(None, description="债券面值")
+    
+    # 日期信息
+    list_date: Optional[str] = Field(None, description="上市日期")
+    maturity_date: Optional[str] = Field(None, description="到期日期")
+    conversion_begin_date: Optional[str] = Field(None, description="转股起始日")
+    conversion_end_date: Optional[str] = Field(None, description="转股结束日")
+    
+    # 其他字段（根据xtdata实际返回的完整字段）
+    raw_data: Optional[Dict[str, Any]] = Field(None, description="原始数据（包含所有xtdata字段）")
+
+
+class IpoInfo(BaseModel):
+    """新股申购信息（get_ipo_info返回，包含xtdata所有字段）"""
+    # 基本信息
+    security_code: str = Field(..., description="证券代码")
+    code_name: Optional[str] = Field(None, description="代码简称")
+    market: Optional[str] = Field(None, description="所属市场")
+    
+    # 发行信息
+    act_issue_qty: Optional[int] = Field(None, description="发行总量（股）")
+    online_issue_qty: Optional[int] = Field(None, description="网上发行量（股）")
+    online_sub_code: Optional[str] = Field(None, description="申购代码")
+    online_sub_max_qty: Optional[int] = Field(None, description="申购上限（股）")
+    publish_price: Optional[float] = Field(None, description="发行价格")
+    
+    # 财务信息
+    is_profit: Optional[int] = Field(None, description="是否已盈利 0:未盈利 1:已盈利")
+    industry_pe: Optional[float] = Field(None, description="行业市盈率")
+    after_pe: Optional[float] = Field(None, description="发行后市盈率")
+    
+    # 日期信息
+    subscribe_date: Optional[str] = Field(None, description="申购日期")
+    lottery_date: Optional[str] = Field(None, description="摇号日期")
+    list_date: Optional[str] = Field(None, description="上市日期")
+    
+    # 其他字段
+    raw_data: Optional[Dict[str, Any]] = Field(None, description="原始数据（包含所有xtdata字段）")
+
+
+class PeriodListResponse(BaseModel):
+    """可用周期列表响应（get_period_list返回）"""
+    periods: List[str] = Field(..., description="可用周期列表")
+
+
+class DataDirResponse(BaseModel):
+    """数据目录响应（get_data_dir返回）"""
+    data_dir: str = Field(..., description="本地数据路径")
+
+
+# ==================== 阶段2: 行情数据获取接口模型 ====================
+
+class DividendFactor(BaseModel):
+    """除权数据（get_divid_factors返回，包含xtdata所有字段）"""
+    time: str = Field(..., description="除权日期")
+    interest: Optional[float] = Field(None, description="每股股利（税前，元）")
+    stock_bonus: Optional[float] = Field(None, description="每股红股（股）")
+    stock_gift: Optional[float] = Field(None, description="每股转增股本（股）")
+    allot_num: Optional[float] = Field(None, description="每股配股数（股）")
+    allot_price: Optional[float] = Field(None, description="配股价格（元）")
+    gugai: Optional[int] = Field(None, description="是否股改")
+    dr: Optional[float] = Field(None, description="除权系数")
+
+
+class TickData(BaseModel):
+    """分笔数据（包含xtdata所有tick字段）"""
+    time: str = Field(..., description="时间戳")
+    last_price: float = Field(..., description="最新价")
+    open: Optional[float] = Field(None, description="开盘价")
+    high: Optional[float] = Field(None, description="最高价")
+    low: Optional[float] = Field(None, description="最低价")
+    last_close: Optional[float] = Field(None, description="前收盘价")
+    amount: Optional[float] = Field(None, description="成交总额")
+    volume: Optional[int] = Field(None, description="成交总量")
+    pvolume: Optional[int] = Field(None, description="原始成交总量")
+    stock_status: Optional[int] = Field(None, description="证券状态")
+    open_int: Optional[int] = Field(None, description="持仓量")
+    last_settlement_price: Optional[float] = Field(None, description="前结算")
+    ask_price: Optional[List[float]] = Field(None, description="委卖价")
+    bid_price: Optional[List[float]] = Field(None, description="委买价")
+    ask_vol: Optional[List[int]] = Field(None, description="委卖量")
+    bid_vol: Optional[List[int]] = Field(None, description="委买量")
+    transaction_num: Optional[int] = Field(None, description="成交笔数")
+
+
+# ==================== 阶段3: 数据下载接口模型 ====================
+
+class DownloadTaskStatus(str, Enum):
+    """下载任务状态"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class DownloadRequest(BaseModel):
+    """数据下载请求"""
+    stock_codes: List[str] = Field(..., description="股票代码列表")
+    period: Optional[str] = Field(None, description="周期类型")
+    start_time: Optional[str] = Field(None, description="起始时间")
+    end_time: Optional[str] = Field(None, description="结束时间")
+    incrementally: Optional[bool] = Field(None, description="是否增量下载")
+
+
+class DownloadResponse(BaseModel):
+    """数据下载响应"""
+    task_id: str = Field(..., description="任务ID")
+    status: DownloadTaskStatus = Field(..., description="任务状态")
+    progress: float = Field(0.0, description="进度 0-100")
+    total: int = Field(0, description="总数")
+    finished: int = Field(0, description="已完成数")
+    message: str = Field("", description="消息")
+    current_stock: Optional[str] = Field(None, description="当前处理的股票")
+
+
+# ==================== 阶段4: 板块管理接口模型 ====================
+
+class SectorCreateRequest(BaseModel):
+    """创建板块请求"""
+    parent_node: str = Field("", description="父节点，空字符串为'我的'")
+    sector_name: str = Field(..., description="板块名称")
+    overwrite: bool = Field(True, description="是否覆盖同名板块")
+
+
+class SectorCreateResponse(BaseModel):
+    """创建板块响应"""
+    created_name: str = Field(..., description="实际创建的板块名称")
+
+
+class SectorAddRequest(BaseModel):
+    """添加板块请求"""
+    sector_name: str = Field(..., description="板块名称")
+    stock_list: List[str] = Field(..., description="股票列表")
+
+
+class SectorRemoveStockRequest(BaseModel):
+    """移除板块成分股请求"""
+    sector_name: str = Field(..., description="板块名称")
+    stock_list: List[str] = Field(..., description="要移除的股票列表")
+
+
+class SectorResetRequest(BaseModel):
+    """重置板块请求"""
+    sector_name: str = Field(..., description="板块名称")
+    stock_list: List[str] = Field(..., description="新的股票列表")
+
+
+# ==================== 阶段5: Level2数据接口模型 ====================
+
+class L2QuoteData(BaseModel):
+    """Level2快照数据（包含xtdata所有l2quote字段）"""
+    time: str = Field(..., description="时间戳")
+    last_price: float = Field(..., description="最新价")
+    open: Optional[float] = Field(None, description="开盘价")
+    high: Optional[float] = Field(None, description="最高价")
+    low: Optional[float] = Field(None, description="最低价")
+    amount: Optional[float] = Field(None, description="成交额")
+    volume: Optional[int] = Field(None, description="成交总量")
+    pvolume: Optional[int] = Field(None, description="原始成交总量")
+    open_int: Optional[int] = Field(None, description="持仓量")
+    stock_status: Optional[int] = Field(None, description="证券状态")
+    transaction_num: Optional[int] = Field(None, description="成交笔数")
+    last_close: Optional[float] = Field(None, description="前收盘价")
+    last_settlement_price: Optional[float] = Field(None, description="前结算")
+    settlement_price: Optional[float] = Field(None, description="今结算")
+    pe: Optional[float] = Field(None, description="市盈率")
+    ask_price: Optional[List[float]] = Field(None, description="10档委卖价")
+    bid_price: Optional[List[float]] = Field(None, description="10档委买价")
+    ask_vol: Optional[List[int]] = Field(None, description="10档委卖量")
+    bid_vol: Optional[List[int]] = Field(None, description="10档委买量")
+
+
+class L2OrderData(BaseModel):
+    """Level2逐笔委托（包含xtdata所有l2order字段）"""
+    time: str = Field(..., description="时间戳")
+    price: float = Field(..., description="委托价")
+    volume: int = Field(..., description="委托量")
+    entrust_no: Optional[int] = Field(None, description="委托号")
+    entrust_type: Optional[int] = Field(None, description="委托类型")
+    entrust_direction: Optional[int] = Field(None, description="委托方向")
+
+
+class L2TransactionData(BaseModel):
+    """Level2逐笔成交（包含xtdata所有l2transaction字段）"""
+    time: str = Field(..., description="时间戳")
+    price: float = Field(..., description="成交价")
+    volume: int = Field(..., description="成交量")
+    amount: Optional[float] = Field(None, description="成交额")
+    trade_index: Optional[int] = Field(None, description="成交记录号")
+    buy_no: Optional[int] = Field(None, description="买方委托号")
+    sell_no: Optional[int] = Field(None, description="卖方委托号")
+    trade_type: Optional[int] = Field(None, description="成交类型")
+    trade_flag: Optional[int] = Field(None, description="成交标志")

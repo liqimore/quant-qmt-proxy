@@ -31,7 +31,14 @@ from app.models.data_models import (
     MarketDataRequest, FinancialDataRequest, SectorRequest, 
     IndexWeightRequest, MarketDataResponse, FinancialDataResponse,
     SectorResponse, IndexWeightResponse, InstrumentInfo,
-    TradingCalendarResponse, ETFInfoResponse
+    TradingCalendarResponse, ETFInfoResponse,
+    # 新增模型导入
+    InstrumentTypeInfo, HolidayInfo, ConvertibleBondInfo, IpoInfo,
+    PeriodListResponse, DataDirResponse, DividendFactor, TickData,
+    DownloadRequest, DownloadResponse, DownloadTaskStatus,
+    SectorCreateRequest, SectorCreateResponse, SectorAddRequest,
+    SectorRemoveStockRequest, SectorResetRequest,
+    L2QuoteData, L2OrderData, L2TransactionData
 )
 from app.utils.exceptions import DataServiceException
 from app.utils.helpers import serialize_data, validate_stock_code, validate_date_range
@@ -713,3 +720,972 @@ class DataService:
             })
         
         return data
+    
+    # ==================== 阶段1: 基础信息接口实现 ====================
+    
+    def get_instrument_type(self, stock_code: str) -> InstrumentTypeInfo:
+        """获取合约类型"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    type_info = xtdata.get_instrument_type(stock_code)
+                    
+                    if type_info is None:
+                        raise DataServiceException(f"未找到合约 {stock_code} 的类型信息")
+                    
+                    return InstrumentTypeInfo(
+                        stock_code=stock_code,
+                        index=type_info.get('index', False),
+                        stock=type_info.get('stock', False),
+                        fund=type_info.get('fund', False),
+                        etf=type_info.get('etf', False),
+                        bond=type_info.get('bond', False),
+                        option=type_info.get('option', False),
+                        futures=type_info.get('futures', False)
+                    )
+                except Exception as e:
+                    logger.error(f"获取真实合约类型失败: {e}")
+                    raise DataServiceException(f"获取合约类型失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据
+            return InstrumentTypeInfo(
+                stock_code=stock_code,
+                stock=True,
+                index=False,
+                fund=False,
+                etf=False,
+                bond=False,
+                option=False,
+                futures=False
+            )
+        except Exception as e:
+            raise DataServiceException(f"获取合约类型失败: {str(e)}")
+    
+    def get_holidays(self) -> HolidayInfo:
+        """获取节假日数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    holidays = xtdata.get_holidays()
+                    return HolidayInfo(holidays=holidays if holidays else [])
+                except Exception as e:
+                    logger.error(f"获取真实节假日数据失败: {e}")
+                    raise DataServiceException(f"获取节假日数据失败: {str(e)}")
+            
+            # Mock数据
+            year = datetime.now().year
+            mock_holidays = [
+                f"{year}0101", f"{year}0102", f"{year}0103",
+                f"{year}0501", f"{year}0502", f"{year}0503",
+                f"{year}1001", f"{year}1002", f"{year}1003"
+            ]
+            return HolidayInfo(holidays=mock_holidays)
+        except Exception as e:
+            raise DataServiceException(f"获取节假日数据失败: {str(e)}")
+    
+    def get_cb_info(self, stock_code: str) -> ConvertibleBondInfo:
+        """获取可转债信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    cb_info = xtdata.get_cb_info(stock_code)
+                    
+                    if cb_info is None:
+                        raise DataServiceException(f"未找到可转债 {stock_code} 的信息")
+                    
+                    return ConvertibleBondInfo(
+                        bond_code=stock_code,
+                        bond_name=cb_info.get('bond_name'),
+                        stock_code=cb_info.get('stock_code'),
+                        stock_name=cb_info.get('stock_name'),
+                        conversion_price=cb_info.get('conversion_price'),
+                        conversion_value=cb_info.get('conversion_value'),
+                        conversion_premium_rate=cb_info.get('conversion_premium_rate'),
+                        current_price=cb_info.get('current_price'),
+                        par_value=cb_info.get('par_value'),
+                        list_date=cb_info.get('list_date'),
+                        maturity_date=cb_info.get('maturity_date'),
+                        conversion_begin_date=cb_info.get('conversion_begin_date'),
+                        conversion_end_date=cb_info.get('conversion_end_date'),
+                        raw_data=cb_info  # 保留原始数据
+                    )
+                except Exception as e:
+                    logger.error(f"获取真实可转债信息失败: {e}")
+                    raise DataServiceException(f"获取可转债信息失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据
+            return ConvertibleBondInfo(
+                bond_code=stock_code,
+                bond_name=f"可转债{stock_code}",
+                stock_code="000001.SZ",
+                stock_name="平安银行",
+                conversion_price=15.5,
+                raw_data={}
+            )
+        except Exception as e:
+            raise DataServiceException(f"获取可转债信息失败: {str(e)}")
+    
+    def get_ipo_info(self, start_time: Optional[str] = None, end_time: Optional[str] = None) -> List[IpoInfo]:
+        """获取新股申购信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    ipo_list = xtdata.get_ipo_info(start_time or '', end_time or '')
+                    
+                    results = []
+                    if ipo_list:
+                        for ipo_data in ipo_list:
+                            results.append(IpoInfo(
+                                security_code=ipo_data.get('securityCode', ''),
+                                code_name=ipo_data.get('codeName'),
+                                market=ipo_data.get('market'),
+                                act_issue_qty=ipo_data.get('actIssueQty'),
+                                online_issue_qty=ipo_data.get('onlineIssueQty'),
+                                online_sub_code=ipo_data.get('onlineSubCode'),
+                                online_sub_max_qty=ipo_data.get('onlineSubMaxQty'),
+                                publish_price=ipo_data.get('publishPrice'),
+                                is_profit=ipo_data.get('isProfit'),
+                                industry_pe=ipo_data.get('industryPe'),
+                                after_pe=ipo_data.get('afterPE'),
+                                raw_data=ipo_data  # 保留原始数据
+                            ))
+                    
+                    return results
+                except Exception as e:
+                    logger.error(f"获取真实IPO信息失败: {e}")
+                    raise DataServiceException(f"获取新股申购信息失败: {str(e)}")
+            
+            # Mock数据
+            return [
+                IpoInfo(
+                    security_code="301234.SZ",
+                    code_name="测试新股",
+                    market="SZ",
+                    publish_price=28.5,
+                    raw_data={}
+                )
+            ]
+        except Exception as e:
+            raise DataServiceException(f"获取新股申购信息失败: {str(e)}")
+    
+    def get_period_list(self) -> PeriodListResponse:
+        """获取可用周期列表"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    periods = xtdata.get_period_list()
+                    return PeriodListResponse(periods=periods if periods else [])
+                except Exception as e:
+                    logger.error(f"获取真实周期列表失败: {e}")
+                    raise DataServiceException(f"获取周期列表失败: {str(e)}")
+            
+            # Mock数据
+            mock_periods = ['tick', '1m', '5m', '15m', '30m', '1h', '1d', '1w', '1mon']
+            return PeriodListResponse(periods=mock_periods)
+        except Exception as e:
+            raise DataServiceException(f"获取周期列表失败: {str(e)}")
+    
+    def get_data_dir(self) -> DataDirResponse:
+        """获取本地数据路径"""
+        try:
+            if self._should_use_real_data():
+                data_dir = xtdata.data_dir
+                return DataDirResponse(data_dir=data_dir if data_dir else "")
+            
+            # Mock数据
+            return DataDirResponse(data_dir="C:\\mock\\data\\dir")
+        except Exception as e:
+            raise DataServiceException(f"获取数据路径失败: {str(e)}")
+    
+    # ==================== 阶段2: 行情数据获取接口实现 ====================
+    
+    def get_local_data(self, request: MarketDataRequest) -> List[MarketDataResponse]:
+        """获取本地行情数据（直接从本地文件读取，速度更快）"""
+        try:
+            results = []
+            for stock_code in request.stock_codes:
+                if not validate_stock_code(stock_code):
+                    raise DataServiceException(f"无效的股票代码: {stock_code}")
+                
+                if self._should_use_real_data():
+                    try:
+                        data = xtdata.get_local_data(
+                            field_list=request.fields or [],
+                            stock_list=[stock_code],
+                            period=request.period.value,
+                            start_time=request.start_date,
+                            end_time=request.end_date,
+                            count=-1,
+                            dividend_type=request.adjust_type or "none"
+                        )
+                        
+                        formatted_data = self._format_market_data(data, request.fields)
+                    except Exception as e:
+                        logger.error(f"获取真实本地数据失败: {e}")
+                        raise DataServiceException(f"获取本地数据失败 [{stock_code}]: {str(e)}")
+                else:
+                    formatted_data = self._get_mock_market_data(stock_code, request)
+                
+                response = MarketDataResponse(
+                    stock_code=stock_code,
+                    data=formatted_data,
+                    fields=request.fields or ["time", "open", "high", "low", "close", "volume"],
+                    period=request.period.value,
+                    start_date=request.start_date,
+                    end_date=request.end_date
+                )
+                results.append(response)
+            
+            return results
+        except Exception as e:
+            raise DataServiceException(f"获取本地数据失败: {str(e)}")
+    
+    def get_full_tick(self, code_list: List[str]) -> Dict[str, TickData]:
+        """获取全推数据（最新tick数据）"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    data = xtdata.get_full_tick(code_list)
+                    
+                    results = {}
+                    if isinstance(data, dict):
+                        for stock_code, tick_data in data.items():
+                            results[stock_code] = TickData(
+                                time=str(tick_data.get('time', '')),
+                                last_price=float(tick_data.get('lastPrice', 0)),
+                                open=tick_data.get('open'),
+                                high=tick_data.get('high'),
+                                low=tick_data.get('low'),
+                                last_close=tick_data.get('lastClose'),
+                                amount=tick_data.get('amount'),
+                                volume=tick_data.get('volume'),
+                                pvolume=tick_data.get('pvolume'),
+                                stock_status=tick_data.get('stockStatus'),
+                                open_int=tick_data.get('openInt'),
+                                last_settlement_price=tick_data.get('lastSettlementPrice'),
+                                ask_price=tick_data.get('askPrice'),
+                                bid_price=tick_data.get('bidPrice'),
+                                ask_vol=tick_data.get('askVol'),
+                                bid_vol=tick_data.get('bidVol'),
+                                transaction_num=tick_data.get('transactionNum')
+                            )
+                    
+                    return results
+                except Exception as e:
+                    logger.error(f"获取真实全推数据失败: {e}")
+                    raise DataServiceException(f"获取全推数据失败: {str(e)}")
+            
+            # Mock数据
+            results = {}
+            for code in code_list:
+                results[code] = TickData(
+                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                    last_price=100.0,
+                    volume=1000000
+                )
+            return results
+        except Exception as e:
+            raise DataServiceException(f"获取全推数据失败: {str(e)}")
+    
+    def get_divid_factors(self, stock_code: str, start_time: str = '', end_time: str = '') -> List[DividendFactor]:
+        """获取除权数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    data = xtdata.get_divid_factors(stock_code, start_time, end_time)
+                    
+                    results = []
+                    if data is not None and hasattr(data, 'to_dict'):
+                        # DataFrame转换
+                        df_reset = data.reset_index()
+                        records = df_reset.to_dict('records')
+                        
+                        for record in records:
+                            results.append(DividendFactor(
+                                time=str(record.get('time', record.get('index', ''))),
+                                interest=record.get('interest'),
+                                stock_bonus=record.get('stockBonus'),
+                                stock_gift=record.get('stockGift'),
+                                allot_num=record.get('allotNum'),
+                                allot_price=record.get('allotPrice'),
+                                gugai=record.get('gugai'),
+                                dr=record.get('dr')
+                            ))
+                    
+                    return results
+                except Exception as e:
+                    logger.error(f"获取真实除权数据失败: {e}")
+                    raise DataServiceException(f"获取除权数据失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据
+            return [
+                DividendFactor(
+                    time="20240101",
+                    interest=0.5,
+                    stock_bonus=0.0,
+                    stock_gift=0.0,
+                    dr=1.0
+                )
+            ]
+        except Exception as e:
+            raise DataServiceException(f"获取除权数据失败: {str(e)}")
+    
+    def get_full_kline(self, request: MarketDataRequest) -> List[MarketDataResponse]:
+        """获取最新交易日K线全推数据（仅支持最新一个交易日）"""
+        try:
+            results = []
+            for stock_code in request.stock_codes:
+                if self._should_use_real_data():
+                    try:
+                        data = xtdata.get_full_kline(
+                            field_list=request.fields or [],
+                            stock_list=[stock_code],
+                            period=request.period.value,
+                            start_time=request.start_date,
+                            end_time=request.end_date,
+                            count=1,  # 仅最新一天
+                            dividend_type=request.adjust_type or "none"
+                        )
+                        
+                        formatted_data = self._format_market_data(data, request.fields)
+                    except Exception as e:
+                        logger.error(f"获取真实全推K线失败: {e}")
+                        raise DataServiceException(f"获取全推K线失败 [{stock_code}]: {str(e)}")
+                else:
+                    formatted_data = self._get_mock_market_data(stock_code, request)[:1]
+                
+                response = MarketDataResponse(
+                    stock_code=stock_code,
+                    data=formatted_data,
+                    fields=request.fields or ["time", "open", "high", "low", "close", "volume"],
+                    period=request.period.value,
+                    start_date=request.start_date,
+                    end_date=request.end_date
+                )
+                results.append(response)
+            
+            return results
+        except Exception as e:
+            raise DataServiceException(f"获取全推K线失败: {str(e)}")
+    
+    # ==================== 阶段3: 数据下载接口实现 ====================
+    
+    def download_history_data(self, stock_code: str, period: str, start_time: str = '', 
+                             end_time: str = '', incrementally: Optional[bool] = None) -> DownloadResponse:
+        """下载历史行情数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    # xtdata下载接口是同步的，会阻塞直到完成
+                    xtdata.download_history_data(
+                        stock_code=stock_code,
+                        period=period,
+                        start_time=start_time,
+                        end_time=end_time,
+                        incrementally=incrementally
+                    )
+                    
+                    return DownloadResponse(
+                        task_id=f"download_{stock_code}_{period}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message=f"下载完成: {stock_code} {period}"
+                    )
+                except Exception as e:
+                    logger.error(f"下载历史数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"download_{stock_code}_{period}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            # Mock响应
+            return DownloadResponse(
+                task_id=f"mock_download_{stock_code}",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载历史数据失败: {str(e)}")
+    
+    def download_history_data_batch(self, stock_list: List[str], period: str, 
+                                   start_time: str = '', end_time: str = '',
+                                   incrementally: Optional[bool] = None,
+                                   callback = None) -> DownloadResponse:
+        """批量下载历史行情数据（带进度回调）"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    task_id = f"batch_download_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    
+                    # xtdata的批量下载接口
+                    xtdata.download_history_data2(
+                        stock_list=stock_list,
+                        period=period,
+                        start_time=start_time,
+                        end_time=end_time,
+                        callback=callback,
+                        incrementally=incrementally
+                    )
+                    
+                    return DownloadResponse(
+                        task_id=task_id,
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message=f"批量下载完成: {len(stock_list)}只股票"
+                    )
+                except Exception as e:
+                    logger.error(f"批量下载历史数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"batch_download_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            # Mock响应
+            return DownloadResponse(
+                task_id="mock_batch_download",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message=f"Mock批量下载完成: {len(stock_list)}只股票"
+            )
+        except Exception as e:
+            raise DataServiceException(f"批量下载历史数据失败: {str(e)}")
+    
+    def download_financial_data(self, stock_list: List[str], table_list: List[str]) -> DownloadResponse:
+        """下载财务数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_financial_data(
+                        stock_list=stock_list,
+                        table_list=table_list
+                    )
+                    
+                    return DownloadResponse(
+                        task_id=f"fin_download_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message=f"财务数据下载完成: {len(stock_list)}只股票, {len(table_list)}张表"
+                    )
+                except Exception as e:
+                    logger.error(f"下载财务数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"fin_download_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_fin_download",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock财务数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载财务数据失败: {str(e)}")
+    
+    def download_financial_data_batch(self, stock_list: List[str], table_list: List[str],
+                                     start_time: str = '', end_time: str = '',
+                                     callback = None) -> DownloadResponse:
+        """批量下载财务数据（带进度回调）"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_financial_data2(
+                        stock_list=stock_list,
+                        table_list=table_list,
+                        start_time=start_time,
+                        end_time=end_time,
+                        callback=callback
+                    )
+                    
+                    return DownloadResponse(
+                        task_id=f"fin_batch_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message=f"批量财务数据下载完成: {len(stock_list)}只股票"
+                    )
+                except Exception as e:
+                    logger.error(f"批量下载财务数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"fin_batch_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_fin_batch",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock批量财务数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"批量下载财务数据失败: {str(e)}")
+    
+    def download_sector_data(self) -> DownloadResponse:
+        """下载板块分类信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_sector_data()
+                    
+                    return DownloadResponse(
+                        task_id=f"sector_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="板块数据下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载板块数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"sector_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_sector",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock板块数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载板块数据失败: {str(e)}")
+    
+    def download_index_weight(self) -> DownloadResponse:
+        """下载指数成分权重信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_index_weight()
+                    
+                    return DownloadResponse(
+                        task_id=f"index_weight_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="指数权重下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载指数权重失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"index_weight_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_index_weight",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock指数权重下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载指数权重失败: {str(e)}")
+    
+    def download_cb_data(self) -> DownloadResponse:
+        """下载可转债基础信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_cb_data()
+                    
+                    return DownloadResponse(
+                        task_id=f"cb_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="可转债数据下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载可转债数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"cb_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_cb",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock可转债数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载可转债数据失败: {str(e)}")
+    
+    def download_etf_info(self) -> DownloadResponse:
+        """下载ETF申赎清单信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_etf_info()
+                    
+                    return DownloadResponse(
+                        task_id=f"etf_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="ETF数据下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载ETF数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"etf_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_etf",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="MockETF数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载ETF数据失败: {str(e)}")
+    
+    def download_holiday_data(self) -> DownloadResponse:
+        """下载节假日数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_holiday_data()
+                    
+                    return DownloadResponse(
+                        task_id=f"holiday_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="节假日数据下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载节假日数据失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"holiday_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_holiday",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock节假日数据下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载节假日数据失败: {str(e)}")
+    
+    def download_history_contracts(self) -> DownloadResponse:
+        """下载过期（退市）合约信息"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.download_history_contracts()
+                    
+                    return DownloadResponse(
+                        task_id=f"history_contracts_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.COMPLETED,
+                        progress=100.0,
+                        message="过期合约数据下载完成"
+                    )
+                except Exception as e:
+                    logger.error(f"下载过期合约失败: {e}")
+                    return DownloadResponse(
+                        task_id=f"history_contracts_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        status=DownloadTaskStatus.FAILED,
+                        progress=0.0,
+                        message=str(e)
+                    )
+            
+            return DownloadResponse(
+                task_id="mock_history_contracts",
+                status=DownloadTaskStatus.COMPLETED,
+                progress=100.0,
+                message="Mock过期合约下载完成"
+            )
+        except Exception as e:
+            raise DataServiceException(f"下载过期合约失败: {str(e)}")
+    
+    # ==================== 阶段4: 板块管理接口实现 ====================
+    
+    def create_sector_folder(self, parent_node: str, folder_name: str, overwrite: bool = True) -> SectorCreateResponse:
+        """创建板块目录节点"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    created_name = xtdata.create_sector_folder(
+                        parent_node=parent_node,
+                        folder_name=folder_name,
+                        overwrite=overwrite
+                    )
+                    
+                    return SectorCreateResponse(
+                        created_name=created_name,
+                        success=True,
+                        message=f"板块目录创建成功: {created_name}"
+                    )
+                except Exception as e:
+                    logger.error(f"创建板块目录失败: {e}")
+                    return SectorCreateResponse(
+                        created_name=folder_name,
+                        success=False,
+                        message=str(e)
+                    )
+            
+            return SectorCreateResponse(
+                created_name=folder_name,
+                success=True,
+                message="Mock板块目录创建成功"
+            )
+        except Exception as e:
+            raise DataServiceException(f"创建板块目录失败: {str(e)}")
+    
+    def create_sector(self, parent_node: str, sector_name: str, overwrite: bool = True) -> SectorCreateResponse:
+        """创建板块"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    created_name = xtdata.create_sector(
+                        parent_node=parent_node,
+                        sector_name=sector_name,
+                        overwrite=overwrite
+                    )
+                    
+                    return SectorCreateResponse(
+                        created_name=created_name,
+                        success=True,
+                        message=f"板块创建成功: {created_name}"
+                    )
+                except Exception as e:
+                    logger.error(f"创建板块失败: {e}")
+                    return SectorCreateResponse(
+                        created_name=sector_name,
+                        success=False,
+                        message=str(e)
+                    )
+            
+            return SectorCreateResponse(
+                created_name=sector_name,
+                success=True,
+                message="Mock板块创建成功"
+            )
+        except Exception as e:
+            raise DataServiceException(f"创建板块失败: {str(e)}")
+    
+    def add_sector(self, sector_name: str, stock_list: List[str]) -> bool:
+        """添加自定义板块"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.add_sector(sector_name=sector_name, stock_list=stock_list)
+                    return True
+                except Exception as e:
+                    logger.error(f"添加自定义板块失败: {e}")
+                    raise DataServiceException(f"添加板块失败: {str(e)}")
+            
+            return True
+        except Exception as e:
+            raise DataServiceException(f"添加板块失败: {str(e)}")
+    
+    def remove_stock_from_sector(self, sector_name: str, stock_list: List[str]) -> bool:
+        """移除板块成分股"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    result = xtdata.remove_stock_from_sector(
+                        sector_name=sector_name,
+                        stock_list=stock_list
+                    )
+                    return result if isinstance(result, bool) else True
+                except Exception as e:
+                    logger.error(f"移除板块成分股失败: {e}")
+                    raise DataServiceException(f"移除成分股失败: {str(e)}")
+            
+            return True
+        except Exception as e:
+            raise DataServiceException(f"移除成分股失败: {str(e)}")
+    
+    def remove_sector(self, sector_name: str) -> bool:
+        """移除自定义板块"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    xtdata.remove_sector(sector_name=sector_name)
+                    return True
+                except Exception as e:
+                    logger.error(f"移除板块失败: {e}")
+                    raise DataServiceException(f"移除板块失败: {str(e)}")
+            
+            return True
+        except Exception as e:
+            raise DataServiceException(f"移除板块失败: {str(e)}")
+    
+    def reset_sector(self, sector_name: str, stock_list: List[str]) -> bool:
+        """重置板块"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    result = xtdata.reset_sector(
+                        sector_name=sector_name,
+                        stock_list=stock_list
+                    )
+                    return result if isinstance(result, bool) else True
+                except Exception as e:
+                    logger.error(f"重置板块失败: {e}")
+                    raise DataServiceException(f"重置板块失败: {str(e)}")
+            
+            return True
+        except Exception as e:
+            raise DataServiceException(f"重置板块失败: {str(e)}")
+    
+    # ==================== 阶段5: Level2数据接口实现 ====================
+    
+    def get_l2_quote(self, stock_code: str) -> L2QuoteData:
+        """获取Level2行情快照数据（包含10档行情）"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    data = xtdata.get_l2_quote([stock_code])
+                    
+                    if not data or stock_code not in data:
+                        raise DataServiceException(f"未找到 {stock_code} 的Level2数据")
+                    
+                    quote = data[stock_code]
+                    
+                    return L2QuoteData(
+                        time=str(quote.get('time', '')),
+                        last_price=float(quote.get('lastPrice', 0)),
+                        open=quote.get('open'),
+                        high=quote.get('high'),
+                        low=quote.get('low'),
+                        amount=quote.get('amount'),
+                        volume=quote.get('volume'),
+                        pvolume=quote.get('pvolume'),
+                        open_int=quote.get('openInt'),
+                        stock_status=quote.get('stockStatus'),
+                        transaction_num=quote.get('transactionNum'),
+                        last_close=quote.get('lastClose'),
+                        last_settlement_price=quote.get('lastSettlementPrice'),
+                        settlement_price=quote.get('settlementPrice'),
+                        pe=quote.get('pe'),
+                        ask_price=quote.get('askPrice', []),  # 10档卖价
+                        bid_price=quote.get('bidPrice', []),  # 10档买价
+                        ask_vol=quote.get('askVol', []),      # 10档卖量
+                        bid_vol=quote.get('bidVol', [])       # 10档买量
+                    )
+                except Exception as e:
+                    logger.error(f"获取Level2快照失败: {e}")
+                    raise DataServiceException(f"获取Level2快照失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据（包含10档）
+            return L2QuoteData(
+                time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                last_price=100.0,
+                volume=1000000,
+                ask_price=[100.1, 100.2, 100.3, 100.4, 100.5, 100.6, 100.7, 100.8, 100.9, 101.0],
+                bid_price=[99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0],
+                ask_vol=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                bid_vol=[150, 250, 350, 450, 550, 650, 750, 850, 950, 1050]
+            )
+        except Exception as e:
+            raise DataServiceException(f"获取Level2快照失败: {str(e)}")
+    
+    def get_l2_order(self, stock_code: str) -> List[L2OrderData]:
+        """获取Level2逐笔委托数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    data = xtdata.get_l2_order([stock_code])
+                    
+                    if not data or stock_code not in data:
+                        return []
+                    
+                    orders = data[stock_code]
+                    results = []
+                    
+                    if hasattr(orders, '__iter__'):
+                        for order in orders:
+                            results.append(L2OrderData(
+                                time=str(order.get('time', '')),
+                                price=float(order.get('price', 0)),
+                                volume=int(order.get('volume', 0)),
+                                entrust_no=order.get('entrustNo'),
+                                entrust_type=order.get('entrustType'),
+                                entrust_direction=order.get('entrustDirection')
+                            ))
+                    
+                    return results
+                except Exception as e:
+                    logger.error(f"获取Level2逐笔委托失败: {e}")
+                    raise DataServiceException(f"获取Level2委托失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据
+            return [
+                L2OrderData(
+                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                    price=100.0,
+                    volume=1000,
+                    entrust_no="123456",
+                    entrust_type=1,
+                    entrust_direction=1
+                )
+            ]
+        except Exception as e:
+            raise DataServiceException(f"获取Level2委托失败: {str(e)}")
+    
+    def get_l2_transaction(self, stock_code: str) -> List[L2TransactionData]:
+        """获取Level2逐笔成交数据"""
+        try:
+            if self._should_use_real_data():
+                try:
+                    data = xtdata.get_l2_transaction([stock_code])
+                    
+                    if not data or stock_code not in data:
+                        return []
+                    
+                    transactions = data[stock_code]
+                    results = []
+                    
+                    if hasattr(transactions, '__iter__'):
+                        for trans in transactions:
+                            results.append(L2TransactionData(
+                                time=str(trans.get('time', '')),
+                                price=float(trans.get('price', 0)),
+                                volume=int(trans.get('volume', 0)),
+                                amount=float(trans.get('amount', 0)),
+                                trade_index=trans.get('tradeIndex'),
+                                buy_no=trans.get('buyNo'),
+                                sell_no=trans.get('sellNo'),
+                                trade_type=trans.get('tradeType'),
+                                trade_flag=trans.get('tradeFlag')
+                            ))
+                    
+                    return results
+                except Exception as e:
+                    logger.error(f"获取Level2逐笔成交失败: {e}")
+                    raise DataServiceException(f"获取Level2成交失败 [{stock_code}]: {str(e)}")
+            
+            # Mock数据
+            return [
+                L2TransactionData(
+                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                    price=100.0,
+                    volume=1000,
+                    amount=100000.0,
+                    trade_index="1",
+                    buy_no="B123",
+                    sell_no="S456",
+                    trade_type=1,
+                    trade_flag=1
+                )
+            ]
+        except Exception as e:
+            raise DataServiceException(f"获取Level2成交失败: {str(e)}")
