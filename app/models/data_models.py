@@ -108,13 +108,52 @@ class IndexWeightResponse(BaseModel):
 
 
 class InstrumentInfo(BaseModel):
-    """合约信息"""
-    instrument_code: str
-    instrument_name: str
-    market_type: str
-    instrument_type: str
-    list_date: Optional[str] = None
-    delist_date: Optional[str] = None
+    """合约信息（完整字段，参考xtquant文档）"""
+    # 基础信息
+    ExchangeID: Optional[str] = Field(None, description="合约市场代码")
+    InstrumentID: Optional[str] = Field(None, description="合约代码")
+    InstrumentName: Optional[str] = Field(None, description="合约名称")
+    ProductID: Optional[str] = Field(None, description="合约的品种ID(期货)")
+    ProductName: Optional[str] = Field(None, description="合约的品种名称(期货)")
+    ProductType: Optional[int] = Field(None, description="合约的类型")
+    ExchangeCode: Optional[str] = Field(None, description="交易所代码")
+    UniCode: Optional[str] = Field(None, description="统一规则代码")
+    
+    # 日期信息
+    CreateDate: Optional[str] = Field(None, description="创建日期")
+    OpenDate: Optional[str] = Field(None, description="上市日期")
+    ExpireDate: Optional[int] = Field(None, description="退市日或者到期日")
+    
+    # 价格信息
+    PreClose: Optional[float] = Field(None, description="前收盘价格")
+    SettlementPrice: Optional[float] = Field(None, description="前结算价格")
+    UpStopPrice: Optional[float] = Field(None, description="当日涨停价")
+    DownStopPrice: Optional[float] = Field(None, description="当日跌停价")
+    
+    # 股本信息
+    FloatVolume: Optional[float] = Field(None, description="流通股本")
+    TotalVolume: Optional[float] = Field(None, description="总股本")
+    
+    # 期货相关
+    LongMarginRatio: Optional[float] = Field(None, description="多头保证金率")
+    ShortMarginRatio: Optional[float] = Field(None, description="空头保证金率")
+    PriceTick: Optional[float] = Field(None, description="最小价格变动单位")
+    VolumeMultiple: Optional[int] = Field(None, description="合约乘数")
+    MainContract: Optional[int] = Field(None, description="主力合约标记")
+    LastVolume: Optional[int] = Field(None, description="昨日持仓量")
+    
+    # 状态信息
+    InstrumentStatus: Optional[int] = Field(None, description="合约停牌状态")
+    IsTrading: Optional[bool] = Field(None, description="合约是否可交易")
+    IsRecent: Optional[bool] = Field(None, description="是否是近月合约")
+    
+    # 兼容旧字段名
+    instrument_code: Optional[str] = Field(None, description="合约代码（兼容字段）")
+    instrument_name: Optional[str] = Field(None, description="合约名称（兼容字段）")
+    market_type: Optional[str] = Field(None, description="市场类型（兼容字段）")
+    instrument_type: Optional[str] = Field(None, description="合约类型（兼容字段）")
+    list_date: Optional[str] = Field(None, description="上市日期（兼容字段）")
+    delist_date: Optional[str] = Field(None, description="退市日期（兼容字段）")
 
 
 class TradingCalendarResponse(BaseModel):
