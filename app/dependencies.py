@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.config import get_settings, Settings
 from app.utils.exceptions import AuthenticationException
+from app.utils.logger import logger
 
 
 # 安全方案
@@ -29,7 +30,7 @@ def get_data_service(settings: Settings = Depends(get_settings)):
     
     if _data_service_instance is None:
         from app.services.data_service import DataService
-        print("  • 初始化 DataService...")
+        logger.info("初始化 DataService...")
         _data_service_instance = DataService(settings)
     
     return _data_service_instance
@@ -41,7 +42,7 @@ def get_trading_service(settings: Settings = Depends(get_settings)):
     
     if _trading_service_instance is None:
         from app.services.trading_service import TradingService
-        print("  • 初始化 TradingService...")
+        logger.info("初始化 TradingService...")
         _trading_service_instance = TradingService(settings)
     
     return _trading_service_instance

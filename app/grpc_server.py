@@ -3,7 +3,6 @@ gRPC 服务器
 """
 import grpc
 from concurrent import futures
-from loguru import logger
 import sys
 
 from generated import data_pb2_grpc, trading_pb2_grpc, health_pb2_grpc
@@ -11,25 +10,22 @@ from app.grpc_services.data_grpc_service import DataGrpcService
 from app.grpc_services.trading_grpc_service import TradingGrpcService
 from app.grpc_services.health_grpc_service import HealthGrpcService
 from app.config import get_settings
-from app.utils.helpers import setup_logging
+from app.utils.logger import configure_logging, logger
 
 
 def serve():
     """启动 gRPC 服务器"""
     settings = get_settings()
     
-    # 配置日志（使用统一的 loguru 配置）
-    setup_logging(
+    # 初始化日志系统
+    configure_logging(
         log_level=settings.logging.level,
-        log_file=settings.logging.file,
-        error_file=settings.logging.error_file,
+        log_file=settings.logging.file or "logs/app.log",
+        error_log_file=settings.logging.error_file or "logs/error.log",
         log_format=settings.logging.format,
         rotation=settings.logging.rotation,
         retention=settings.logging.retention,
-        compression=settings.logging.compression,
-        console_output=settings.logging.console_output,
-        backtrace=settings.logging.backtrace,
-        diagnose=settings.logging.diagnose
+        compression=settings.logging.compression
     )
     
     # 获取 gRPC 配置
@@ -73,14 +69,14 @@ def serve():
     
     # 启动服务器
     server.start()
-    print(f"✓ gRPC 服务已就绪 (工作线程: {max_workers})")
+    logger.info(f"gRPC 服务已就绪 (工作线程: {max_workers})")
     
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
-        print("\n✓ gRPC 服务正在关闭...")
+        logger.info("gRPC 服务正在关闭...")
         server.stop(grace=5)
-        print("✓ gRPC 服务已关闭")
+        logger.info("gRPC 服务已关闭")
 
 
 if __name__ == '__main__':
