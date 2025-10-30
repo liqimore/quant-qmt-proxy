@@ -35,6 +35,11 @@ xtquant:
   data:
     path: "./data"
     config_path: "./xtquant/config"
+    # 行情订阅配置
+    max_queue_size: 1000  # 每个订阅队列最大长度
+    max_subscriptions: 100  # 单实例最大订阅数
+    heartbeat_timeout: 60  # WebSocket心跳超时（秒）
+    whole_quote_enabled: false  # 是否允许全推订阅（生产环境慎开）
 
 # 模式配置 (通过环境变量 APP_MODE 选择: mock, dev, prod)
 modes:

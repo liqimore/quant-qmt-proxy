@@ -557,6 +557,90 @@ message L2TransactionDataList {
   repeated L2TransactionData transactions = 1;
 }
 
+// ==================== 阶段6: 行情订阅接口 ====================
+
+// 订阅类型枚举
+enum SubscriptionType {
+  SUBSCRIPTION_QUOTE = 0;        // 单股订阅
+  SUBSCRIPTION_WHOLE_QUOTE = 1;  // 全推订阅
+}
+
+// 订阅请求
+message SubscriptionRequest {
+  repeated string symbols = 1;           // 股票代码列表
+  string adjust_type = 2;                // 复权类型: none, front, back
+  SubscriptionType subscription_type = 3; // 订阅类型
+}
+
+// 全推订阅请求
+message WholeQuoteRequest {
+  repeated string markets = 1;  // 市场列表 ["SH", "SZ"]
+}
+
+// 订阅响应
+message SubscriptionResponse {
+  string subscription_id = 1;    // 订阅ID
+  string status = 2;              // 订阅状态
+  string created_at = 3;          // 创建时间
+  repeated string symbols = 4;    // 订阅的股票代码
+  string subscription_type = 5;   // 订阅类型
+  common.Status rpc_status = 6;   // RPC状态
+}
+
+// 取消订阅请求
+message UnsubscribeRequest {
+  string subscription_id = 1;  // 订阅ID
+}
+
+// 取消订阅响应
+message UnsubscribeResponse {
+  bool success = 1;
+  string message = 2;
+  common.Status status = 3;
+}
+
+// 实时行情更新
+message QuoteUpdate {
+  string stock_code = 1;        // 股票代码
+  string timestamp = 2;         // 时间戳
+  double last_price = 3;        // 最新价
+  double open = 4;              // 开盘价
+  double high = 5;              // 最高价
+  double low = 6;               // 最低价
+  double close = 7;             // 收盘价
+  int64 volume = 8;             // 成交量
+  double amount = 9;            // 成交额
+  double pre_close = 10;        // 前收盘价
+  repeated double bid_price = 11;  // 委买价（5档）
+  repeated double ask_price = 12;  // 委卖价（5档）
+  repeated int32 bid_vol = 13;     // 委买量（5档）
+  repeated int32 ask_vol = 14;     // 委卖量（5档）
+}
+
+// 订阅信息请求
+message SubscriptionInfoRequest {
+  string subscription_id = 1;
+}
+
+// 订阅信息响应
+message SubscriptionInfoResponse {
+  string subscription_id = 1;
+  repeated string symbols = 2;
+  string adjust_type = 3;
+  string subscription_type = 4;
+  string created_at = 5;
+  string last_heartbeat = 6;
+  bool active = 7;
+  int32 queue_size = 8;
+  common.Status status = 9;
+}
+
+// 订阅列表响应
+message SubscriptionListResponse {
+  repeated SubscriptionInfoResponse subscriptions = 1;
+  common.Status status = 2;
+}
+
 // ==================== 数据服务定义 ====================
 
 service DataService {
@@ -673,4 +757,20 @@ service DataService {
   
   // 获取Level2逐笔成交
   rpc GetL2Transaction(L2TransactionRequest) returns (L2TransactionResponse);
+  
+  // ===== 阶段6: 行情订阅接口 =====
+  // 订阅行情（Server Streaming）
+  rpc SubscribeQuote(SubscriptionRequest) returns (stream QuoteUpdate);
+  
+  // 订阅全推行情（Server Streaming）
+  rpc SubscribeWholeQuote(WholeQuoteRequest) returns (stream QuoteUpdate);
+  
+  // 取消订阅
+  rpc UnsubscribeQuote(UnsubscribeRequest) returns (UnsubscribeResponse);
+  
+  // 获取订阅信息
+  rpc GetSubscriptionInfo(SubscriptionInfoRequest) returns (SubscriptionInfoResponse);
+  
+  // 列出所有订阅
+  rpc ListSubscriptions(google.protobuf.Empty) returns (SubscriptionListResponse);
 }

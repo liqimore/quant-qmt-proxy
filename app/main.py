@@ -12,7 +12,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.config import get_settings, Settings
-from app.routers import health, data, trading
+from app.routers import health, data, trading, websocket
 from app.utils.helpers import format_response
 from app.utils.exceptions import XTQuantException, handle_xtquant_exception
 from app.utils.logger import configure_logging, logger
@@ -35,12 +35,32 @@ async def lifespan(app: FastAPI):
         compression=settings.logging.compression
     )
     
+    # 初始化订阅管理器并设置事件循环
+    import asyncio
+    from app.dependencies import get_subscription_manager
+    
+    try:
+        loop = asyncio.get_running_loop()
+        subscription_manager = get_subscription_manager(settings)
+        subscription_manager.set_event_loop(loop)
+        logger.info("订阅管理器已初始化")
+    except Exception as e:
+        logger.warning(f"订阅管理器初始化失败: {e}")
+    
     logger.info("REST API 服务已就绪")
     
     yield
     
     # 关闭时执行
     logger.info("REST API 服务正在关闭...")
+    
+    # 关闭订阅管理器
+    try:
+        subscription_manager = get_subscription_manager(settings)
+        subscription_manager.shutdown()
+        logger.info("订阅管理器已关闭")
+    except Exception as e:
+        logger.error(f"关闭订阅管理器失败: {e}")
 
 
 # 创建FastAPI应用
@@ -108,6 +128,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 app.include_router(health.router)
 app.include_router(data.router)
 app.include_router(trading.router)
+app.include_router(websocket.router)
 
 
 @app.get("/")

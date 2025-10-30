@@ -22,6 +22,7 @@ security = HTTPBearer(auto_error=False)
 # 全局服务实例（单例模式）
 _data_service_instance = None
 _trading_service_instance = None
+_subscription_manager_instance = None
 
 
 def get_data_service(settings: Settings = Depends(get_settings)):
@@ -46,6 +47,18 @@ def get_trading_service(settings: Settings = Depends(get_settings)):
         _trading_service_instance = TradingService(settings)
     
     return _trading_service_instance
+
+
+def get_subscription_manager(settings: Settings = Depends(get_settings)):
+    """获取SubscriptionManager单例实例"""
+    global _subscription_manager_instance
+    
+    if _subscription_manager_instance is None:
+        from app.services.subscription_manager import SubscriptionManager
+        logger.info("初始化 SubscriptionManager...")
+        _subscription_manager_instance = SubscriptionManager(settings)
+    
+    return _subscription_manager_instance
 
 
 async def get_api_key(

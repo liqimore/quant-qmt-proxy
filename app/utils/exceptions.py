@@ -56,10 +56,16 @@ def create_error_response(
 def handle_xtquant_exception(exc: XTQuantException) -> HTTPException:
     """处理xtquant异常"""
     if isinstance(exc, DataServiceException):
+        # 对于验证相关的错误（如空列表），使用422状态码
+        if exc.error_code in ["EMPTY_SYMBOLS", "INVALID_SYMBOLS"]:
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
+        
         return create_error_response(
             message=exc.message,
             error_code=exc.error_code or "DATA_SERVICE_ERROR",
-            status_code=status.HTTP_400_BAD_REQUEST
+            status_code=status_code
         )
     elif isinstance(exc, TradingServiceException):
         return create_error_response(
