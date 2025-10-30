@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
+from datetime import datetime
 from app.services.data_service import DataService
 from app.models.data_models import (
     MarketDataRequest, FinancialDataRequest, SectorRequest,
@@ -13,11 +14,15 @@ from app.models.data_models import (
     LocalDataRequest, FullTickRequest, DividFactorsRequest, FullKlineRequest,
     # 阶段3: 数据下载请求模型
     DownloadHistoryDataRequest, DownloadHistoryDataBatchRequest, DownloadFinancialDataRequest,
+    DownloadFinancialDataBatchRequest, DownloadIndexWeightRequest, DownloadHistoryContractsRequest,
     # 阶段5: Level2请求模型
-    L2QuoteRequest, L2OrderRequest, L2TransactionRequest
+    L2QuoteRequest, L2OrderRequest, L2TransactionRequest,
+    # 阶段6: 订阅请求模型
+    SubscriptionRequest, SubscriptionResponse, UnsubscribeRequest, QuoteUpdate
 )
 from app.utils.helpers import format_response
 from app.utils.exceptions import DataServiceException, handle_xtquant_exception
+from app.utils.logger import logger
 from app.dependencies import verify_api_key, get_data_service
 from app.config import get_settings, Settings
 
@@ -88,10 +93,22 @@ async def get_sector_stocks(
 ):
     """获取板块内股票列表"""
     try:
-        # 这里可以添加获取特定板块股票的逻辑
+        # 调用 get_sector_list 获取所有板块，或实现单独的 get_sector_stocks 方法
+        # 这里先使用 get_sector_list 并过滤
+        all_sectors = data_service.get_sector_list()
+        
+        # 查找匹配的板块
+        for sector in all_sectors:
+            if sector.sector_name == request.sector_name:
+                return format_response(
+                    data=sector.dict(),
+                    message="获取板块股票列表成功"
+                )
+        
+        # 未找到板块
         return format_response(
             data={"sector_name": request.sector_name, "stock_list": []},
-            message="获取板块股票列表成功"
+            message=f"未找到板块: {request.sector_name}"
         )
     except DataServiceException as e:
         raise handle_xtquant_exception(e)
@@ -296,9 +313,7 @@ async def get_local_data(
 ):
     """获取本地行情数据"""
     try:
-        result = data_service.get_local_data(
-            request.stock_codes, request.start_time, request.end_time, request.period
-        )
+        result = data_service.get_local_data(request)
         return format_response(data=result, message="获取本地行情数据成功")
     except Exception as e:
         raise HTTPException(
@@ -315,9 +330,7 @@ async def get_full_tick(
 ):
     """获取完整tick数据"""
     try:
-        result = data_service.get_full_tick(
-            request.stock_codes, request.start_time, request.end_time
-        )
+        result = data_service.get_full_tick(request)
         return format_response(data=result, message="获取完整tick数据成功")
     except Exception as e:
         raise HTTPException(
@@ -351,9 +364,7 @@ async def get_full_kline(
 ):
     """获取完整K线数据（带复权信息）"""
     try:
-        result = data_service.get_full_kline(
-            request.stock_codes, request.start_time, request.end_time, request.period
-        )
+        result = data_service.get_full_kline(request)
         return format_response(data=result, message="获取完整K线数据成功")
     except Exception as e:
         raise HTTPException(
@@ -411,9 +422,8 @@ async def download_financial_data(
 ):
     """下载财务数据"""
     try:
-        result = data_service.download_financial_data(
-            request.stock_list, request.table_list, request.start_date, request.end_date
-        )
+        # 直接传入请求模型给服务层
+        result = data_service.download_financial_data(request)
         return format_response(data=result, message="下载财务数据任务已提交")
     except Exception as e:
         raise HTTPException(
@@ -424,20 +434,14 @@ async def download_financial_data(
 
 @router.post("/download/financial-data-batch")
 async def download_financial_data_batch(
-    stock_list: List[str],
-    table_list: List[str],
-    start_date: str = "",
-    end_date: str = "",
-    callback_func: Optional[str] = None,
+    request: DownloadFinancialDataBatchRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """批量下载财务数据（带回调）"""
     try:
         from app.models.data_models import DownloadResponse
-        result = data_service.download_financial_data_batch(
-            stock_list, table_list, start_date, end_date, callback_func
-        )
+        result = data_service.download_financial_data_batch(request)
         return format_response(data=result, message="批量下载财务数据任务已提交")
     except Exception as e:
         raise HTTPException(
@@ -465,14 +469,14 @@ async def download_sector_data(
 
 @router.post("/download/index-weight")
 async def download_index_weight(
-    index_code: str,
+    request: DownloadIndexWeightRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """下载指数权重数据"""
     try:
         from app.models.data_models import DownloadResponse
-        result = data_service.download_index_weight(index_code)
+        result = data_service.download_index_weight(request)
         return format_response(data=result, message="下载指数权重数据任务已提交")
     except Exception as e:
         raise HTTPException(
@@ -534,14 +538,14 @@ async def download_holiday_data(
 
 @router.post("/download/history-contracts")
 async def download_history_contracts(
-    market: str,
+    request: DownloadHistoryContractsRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """下载历史合约数据"""
     try:
         from app.models.data_models import DownloadResponse
-        result = data_service.download_history_contracts(market)
+        result = data_service.download_history_contracts(request)
         return format_response(data=result, message="下载历史合约数据任务已提交")
     except Exception as e:
         raise HTTPException(
@@ -672,16 +676,14 @@ async def reset_sector(
 
 @router.post("/l2/quote")
 async def get_l2_quote(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
+    request: L2QuoteRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取Level2快照数据（10档行情）"""
     try:
         from app.models.data_models import L2QuoteData
-        result = data_service.get_l2_quote(stock_codes, start_time, end_time)
+        result = data_service.get_l2_quote(request.stock_codes)
         return format_response(data=result, message="获取Level2快照数据成功")
     except Exception as e:
         raise HTTPException(
@@ -692,16 +694,14 @@ async def get_l2_quote(
 
 @router.post("/l2/order")
 async def get_l2_order(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
+    request: L2OrderRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取Level2逐笔委托数据"""
     try:
         from app.models.data_models import L2OrderData
-        result = data_service.get_l2_order(stock_codes, start_time, end_time)
+        result = data_service.get_l2_order(request.stock_codes)
         return format_response(data=result, message="获取Level2逐笔委托数据成功")
     except Exception as e:
         raise HTTPException(
@@ -712,19 +712,188 @@ async def get_l2_order(
 
 @router.post("/l2/transaction")
 async def get_l2_transaction(
-    stock_codes: List[str],
-    start_time: str = "",
-    end_time: str = "",
+    request: L2TransactionRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
 ):
     """获取Level2逐笔成交数据"""
     try:
         from app.models.data_models import L2TransactionData
-        result = data_service.get_l2_transaction(stock_codes, start_time, end_time)
+        result = data_service.get_l2_transaction(request.stock_codes)
         return format_response(data=result, message="获取Level2逐笔成交数据成功")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": f"获取Level2逐笔成交数据失败: {str(e)}"}
+        )
+
+
+# ==================== 阶段6: 行情订阅接口 ====================
+
+@router.post("/subscription", response_model=dict)
+async def create_subscription(
+    request: SubscriptionRequest,
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
+):
+    """
+    创建行情订阅
+    
+    Args:
+        request: 订阅请求（包含股票代码列表、复权类型等）
+    
+    Returns:
+        订阅响应（包含subscription_id）
+    """
+    try:
+        from app.dependencies import get_subscription_manager
+        from app.models.data_models import SubscriptionResponse, SubscriptionType
+        
+        # 获取订阅管理器
+        subscription_manager = get_subscription_manager(settings)
+        
+        # 根据订阅类型创建订阅
+        if request.subscription_type == SubscriptionType.WHOLE_QUOTE:
+            subscription_id = subscription_manager.subscribe_whole_quote()
+        else:
+            subscription_id = subscription_manager.subscribe_quote(
+                symbols=request.symbols,
+                adjust_type=request.adjust_type
+            )
+        
+        # 构造响应
+        response = {
+            "subscription_id": subscription_id,
+            "status": "active",
+            "created_at": datetime.now().isoformat(),
+            "symbols": request.symbols if request.subscription_type == SubscriptionType.QUOTE else ["*"],
+            "subscription_type": request.subscription_type.value,
+            "message": "订阅创建成功"
+        }
+        
+        logger.info(f"创建订阅成功: {subscription_id}")
+        return response
+    
+    except DataServiceException as e:
+        raise handle_xtquant_exception(e)
+    except Exception as e:
+        logger.error(f"创建订阅失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": f"创建订阅失败: {str(e)}"}
+        )
+
+
+@router.delete("/subscription/{subscription_id}")
+async def delete_subscription(
+    subscription_id: str,
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
+):
+    """
+    取消订阅
+    
+    Args:
+        subscription_id: 订阅ID
+    
+    Returns:
+        取消结果
+    """
+    try:
+        from app.dependencies import get_subscription_manager
+        
+        # 获取订阅管理器
+        subscription_manager = get_subscription_manager(settings)
+        
+        # 取消订阅
+        success = subscription_manager.unsubscribe(subscription_id)
+        
+        logger.info(f"取消订阅: {subscription_id}, 结果: {success}")
+        
+        return {
+            "success": success,
+            "message": "订阅已取消" if success else "订阅不存在",
+            "subscription_id": subscription_id
+        }
+    
+    except Exception as e:
+        logger.error(f"取消订阅失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": f"取消订阅失败: {str(e)}"}
+        )
+
+
+@router.get("/subscription/{subscription_id}")
+async def get_subscription_info(
+    subscription_id: str,
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
+):
+    """
+    获取订阅信息
+    
+    Args:
+        subscription_id: 订阅ID
+    
+    Returns:
+        订阅详细信息
+    """
+    try:
+        from app.dependencies import get_subscription_manager
+        
+        # 获取订阅管理器
+        subscription_manager = get_subscription_manager(settings)
+        
+        # 获取订阅信息
+        info = subscription_manager.get_subscription_info(subscription_id)
+        
+        if not info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": f"订阅不存在: {subscription_id}"}
+            )
+        
+        return info
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取订阅信息失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": f"获取订阅信息失败: {str(e)}"}
+        )
+
+
+@router.get("/subscriptions")
+async def list_subscriptions(
+    api_key: str = Depends(verify_api_key),
+    settings: Settings = Depends(get_settings)
+):
+    """
+    列出所有订阅
+    
+    Returns:
+        所有订阅列表
+    """
+    try:
+        from app.dependencies import get_subscription_manager
+        
+        # 获取订阅管理器
+        subscription_manager = get_subscription_manager(settings)
+        
+        # 列出所有订阅
+        subscriptions = subscription_manager.list_subscriptions()
+        
+        return {
+            "subscriptions": subscriptions,
+            "total": len(subscriptions)
+        }
+    
+    except Exception as e:
+        logger.error(f"列出订阅失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": f"列出订阅失败: {str(e)}"}
         )

@@ -264,6 +264,8 @@ class LocalDataRequest(BaseModel):
     start_time: str = Field("", description="开始时间，YYYYMMDD格式")
     end_time: str = Field("", description="结束时间，YYYYMMDD格式")
     period: str = Field("1d", description="K线周期")
+    fields: Optional[List[str]] = Field(None, description="字段列表")
+    adjust_type: Optional[str] = Field("none", description="复权类型")
 
 
 class FullTickRequest(BaseModel):
@@ -284,6 +286,8 @@ class FullKlineRequest(BaseModel):
     start_time: str = Field("", description="开始时间，YYYYMMDD格式")
     end_time: str = Field("", description="结束时间，YYYYMMDD格式")
     period: str = Field("1d", description="K线周期")
+    fields: Optional[List[str]] = Field(None, description="字段列表")
+    adjust_type: Optional[str] = Field("none", description="复权类型")
 
 
 class DividendFactor(BaseModel):
@@ -352,6 +356,25 @@ class DownloadFinancialDataRequest(BaseModel):
     table_list: List[str] = Field(..., description="财务表列表")
     start_date: str = Field("", description="起始日期")
     end_date: str = Field("", description="结束日期")
+
+
+class DownloadFinancialDataBatchRequest(BaseModel):
+    """批量下载财务数据请求（带回调）"""
+    stock_list: List[str] = Field(..., description="股票代码列表")
+    table_list: List[str] = Field(..., description="财务表列表")
+    start_date: str = Field("", description="起始日期")
+    end_date: str = Field("", description="结束日期")
+    callback_func: Optional[str] = Field(None, description="回调函数名（可选）")
+
+
+class DownloadIndexWeightRequest(BaseModel):
+    """下载指数权重请求"""
+    index_code: Optional[str] = Field(None, description="指数代码（可选，为空则下载全部）")
+
+
+class DownloadHistoryContractsRequest(BaseModel):
+    """下载历史合约信息请求"""
+    market: Optional[str] = Field(None, description="市场代码（可选）")
 
 
 class DownloadRequest(BaseModel):
@@ -475,3 +498,107 @@ class L2TransactionData(BaseModel):
     sell_no: Optional[int] = Field(None, description="卖方委托号")
     trade_type: Optional[int] = Field(None, description="成交类型")
     trade_flag: Optional[int] = Field(None, description="成交标志")
+
+
+# ==================== 阶段6: 行情订阅接口模型 ====================
+
+class SubscriptionType(str, Enum):
+    """订阅类型"""
+    QUOTE = "quote"  # 单股订阅
+    WHOLE_QUOTE = "whole_quote"  # 全推订阅
+
+
+class SubscriptionRequest(BaseModel):
+    """订阅请求"""
+    symbols: List[str] = Field(..., min_items=1, description="股票代码列表（不能为空）")
+    adjust_type: str = Field("none", description="复权类型: none, front, back")
+    subscription_type: SubscriptionType = Field(
+        SubscriptionType.QUOTE,
+        description="订阅类型"
+    )
+    
+    @validator('symbols')
+    def validate_symbols(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('股票代码列表不能为空')
+        # 过滤掉空字符串
+        v = [s.strip() for s in v if s and s.strip()]
+        if not v:
+            raise ValueError('股票代码列表不能为空')
+        return v
+    
+    @validator('adjust_type')
+    def validate_adjust_type(cls, v):
+        if v not in ["none", "front", "back"]:
+            raise ValueError('复权类型必须是 none, front 或 back')
+        return v
+
+
+class WholeQuoteRequest(BaseModel):
+    """全推订阅请求"""
+    markets: List[str] = Field(["SH", "SZ"], description="市场列表")
+
+
+class SubscriptionResponse(BaseModel):
+    """订阅响应"""
+    subscription_id: str = Field(..., description="订阅ID")
+    status: str = Field(..., description="订阅状态")
+    created_at: str = Field(..., description="创建时间")
+    symbols: Optional[List[str]] = Field(None, description="订阅的股票代码")
+    subscription_type: str = Field(..., description="订阅类型")
+
+
+class UnsubscribeRequest(BaseModel):
+    """取消订阅请求"""
+    subscription_id: str = Field(..., description="订阅ID")
+
+
+class UnsubscribeResponse(BaseModel):
+    """取消订阅响应"""
+    success: bool = Field(..., description="是否成功")
+    message: str = Field("", description="消息")
+
+
+class QuoteUpdate(BaseModel):
+    """实时行情更新数据"""
+    stock_code: str = Field(..., description="股票代码")
+    timestamp: str = Field(..., description="时间戳")
+    last_price: Optional[float] = Field(None, description="最新价")
+    open: Optional[float] = Field(None, description="开盘价")
+    high: Optional[float] = Field(None, description="最高价")
+    low: Optional[float] = Field(None, description="最低价")
+    close: Optional[float] = Field(None, description="收盘价")
+    volume: Optional[int] = Field(None, description="成交量")
+    amount: Optional[float] = Field(None, description="成交额")
+    pre_close: Optional[float] = Field(None, description="前收盘价")
+    bid_price: Optional[List[float]] = Field(None, description="委买价（5档）")
+    ask_price: Optional[List[float]] = Field(None, description="委卖价（5档）")
+    bid_vol: Optional[List[int]] = Field(None, description="委买量（5档）")
+    ask_vol: Optional[List[int]] = Field(None, description="委卖量（5档）")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "stock_code": "000001.SZ",
+                "timestamp": "2024-01-01T09:30:00",
+                "last_price": 10.5,
+                "open": 10.0,
+                "high": 10.8,
+                "low": 9.9,
+                "close": 10.5,
+                "volume": 1000000,
+                "amount": 10500000.0
+            }
+        }
+
+
+class SubscriptionInfoResponse(BaseModel):
+    """订阅信息响应"""
+    subscription_id: str
+    symbols: List[str]
+    adjust_type: str
+    subscription_type: str
+    created_at: str
+    last_heartbeat: str
+    active: bool
+    queue_size: int

@@ -38,7 +38,10 @@ from app.models.data_models import (
     DownloadRequest, DownloadResponse, DownloadTaskStatus,
     SectorCreateRequest, SectorCreateResponse, SectorAddRequest,
     SectorRemoveStockRequest, SectorResetRequest,
-    L2QuoteData, L2OrderData, L2TransactionData
+    L2QuoteData, L2OrderData, L2TransactionData,
+    FullTickRequest, FullKlineRequest, LocalDataRequest,
+    DownloadFinancialDataRequest, DownloadFinancialDataBatchRequest, 
+    DownloadIndexWeightRequest, DownloadHistoryContractsRequest
 )
 from app.utils.exceptions import DataServiceException
 from app.utils.helpers import serialize_data, validate_stock_code, validate_date_range
@@ -911,7 +914,7 @@ class DataService:
     
     # ==================== 阶段2: 行情数据获取接口实现 ====================
     
-    def get_local_data(self, request: MarketDataRequest) -> List[MarketDataResponse]:
+    def get_local_data(self, request: LocalDataRequest) -> List[MarketDataResponse]:
         """获取本地行情数据（直接从本地文件读取，速度更快）"""
         try:
             results = []
@@ -924,9 +927,9 @@ class DataService:
                         data = xtdata.get_local_data(
                             field_list=request.fields or [],
                             stock_list=[stock_code],
-                            period=request.period.value,
-                            start_time=request.start_date,
-                            end_time=request.end_date,
+                            period=request.period,
+                            start_time=request.start_time,
+                            end_time=request.end_time,
                             count=-1,
                             dividend_type=request.adjust_type or "none"
                         )
@@ -936,15 +939,23 @@ class DataService:
                         logger.error(f"获取真实本地数据失败: {e}")
                         raise DataServiceException(f"获取本地数据失败 [{stock_code}]: {str(e)}")
                 else:
-                    formatted_data = self._get_mock_market_data(stock_code, request)
+                    # Mock数据 - 构造临时MarketDataRequest用于mock
+                    from app.models.data_models import PeriodType
+                    mock_request = type('obj', (object,), {
+                        'fields': request.fields,
+                        'period': PeriodType(request.period) if hasattr(PeriodType, request.period.upper().replace('D', 'd').replace('M', 'm').replace('H', 'h').replace('W', 'w')) else PeriodType.DAILY,
+                        'start_date': request.start_time,
+                        'end_date': request.end_time
+                    })()
+                    formatted_data = self._get_mock_market_data(stock_code, mock_request)
                 
                 response = MarketDataResponse(
                     stock_code=stock_code,
                     data=formatted_data,
                     fields=request.fields or ["time", "open", "high", "low", "close", "volume"],
-                    period=request.period.value,
-                    start_date=request.start_date,
-                    end_date=request.end_date
+                    period=request.period,
+                    start_date=request.start_time,
+                    end_date=request.end_time
                 )
                 results.append(response)
             
@@ -952,17 +963,17 @@ class DataService:
         except Exception as e:
             raise DataServiceException(f"获取本地数据失败: {str(e)}")
     
-    def get_full_tick(self, code_list: List[str]) -> Dict[str, TickData]:
+    def get_full_tick(self, request: FullTickRequest) -> Dict[str, List[TickData]]:
         """获取全推数据（最新tick数据）"""
         try:
             if self._should_use_real_data():
                 try:
-                    data = xtdata.get_full_tick(code_list)
+                    data = xtdata.get_full_tick(request.stock_codes)
                     
                     results = {}
                     if isinstance(data, dict):
                         for stock_code, tick_data in data.items():
-                            results[stock_code] = TickData(
+                            tick = TickData(
                                 time=str(tick_data.get('time', '')),
                                 last_price=float(tick_data.get('lastPrice', 0)),
                                 open=tick_data.get('open'),
@@ -981,20 +992,22 @@ class DataService:
                                 bid_vol=tick_data.get('bidVol'),
                                 transaction_num=tick_data.get('transactionNum')
                             )
+                            # 包装为列表
+                            results[stock_code] = [tick]
                     
                     return results
                 except Exception as e:
                     logger.error(f"获取真实全推数据失败: {e}")
                     raise DataServiceException(f"获取全推数据失败: {str(e)}")
             
-            # Mock数据
+            # Mock数据 - 返回列表格式
             results = {}
-            for code in code_list:
-                results[code] = TickData(
+            for code in request.stock_codes:
+                results[code] = [TickData(
                     time=datetime.now().strftime("%Y%m%d%H%M%S"),
                     last_price=100.0,
                     volume=1000000
-                )
+                )]
             return results
         except Exception as e:
             raise DataServiceException(f"获取全推数据失败: {str(e)}")
@@ -1042,7 +1055,7 @@ class DataService:
         except Exception as e:
             raise DataServiceException(f"获取除权数据失败: {str(e)}")
     
-    def get_full_kline(self, request: MarketDataRequest) -> List[MarketDataResponse]:
+    def get_full_kline(self, request: FullKlineRequest) -> List[MarketDataResponse]:
         """获取最新交易日K线全推数据（仅支持最新一个交易日）"""
         try:
             results = []
@@ -1052,9 +1065,9 @@ class DataService:
                         data = xtdata.get_full_kline(
                             field_list=request.fields or [],
                             stock_list=[stock_code],
-                            period=request.period.value,
-                            start_time=request.start_date,
-                            end_time=request.end_date,
+                            period=request.period,
+                            start_time=request.start_time,
+                            end_time=request.end_time,
                             count=1,  # 仅最新一天
                             dividend_type=request.adjust_type or "none"
                         )
@@ -1064,15 +1077,23 @@ class DataService:
                         logger.error(f"获取真实全推K线失败: {e}")
                         raise DataServiceException(f"获取全推K线失败 [{stock_code}]: {str(e)}")
                 else:
-                    formatted_data = self._get_mock_market_data(stock_code, request)[:1]
+                    # Mock数据 - 构造临时对象用于mock
+                    from app.models.data_models import PeriodType
+                    mock_request = type('obj', (object,), {
+                        'fields': request.fields,
+                        'period': PeriodType(request.period) if hasattr(PeriodType, request.period.upper().replace('D', 'd').replace('M', 'm').replace('H', 'h').replace('W', 'w')) else PeriodType.DAILY,
+                        'start_date': request.start_time,
+                        'end_date': request.end_time
+                    })()
+                    formatted_data = self._get_mock_market_data(stock_code, mock_request)[:1]
                 
                 response = MarketDataResponse(
                     stock_code=stock_code,
                     data=formatted_data,
                     fields=request.fields or ["time", "open", "high", "low", "close", "volume"],
-                    period=request.period.value,
-                    start_date=request.start_date,
-                    end_date=request.end_date
+                    period=request.period,
+                    start_date=request.start_time,
+                    end_date=request.end_time
                 )
                 results.append(response)
             
@@ -1167,21 +1188,24 @@ class DataService:
         except Exception as e:
             raise DataServiceException(f"批量下载历史数据失败: {str(e)}")
     
-    def download_financial_data(self, stock_list: List[str], table_list: List[str]) -> DownloadResponse:
+    def download_financial_data(self, request: DownloadFinancialDataRequest) -> DownloadResponse:
         """下载财务数据"""
         try:
             if self._should_use_real_data():
                 try:
+                    # 从请求对象读取参数
                     xtdata.download_financial_data(
-                        stock_list=stock_list,
-                        table_list=table_list
+                        stock_list=request.stock_list,
+                        table_list=request.table_list,
+                        start_date=request.start_date if request.start_date else '',
+                        end_date=request.end_date if request.end_date else ''
                     )
                     
                     return DownloadResponse(
                         task_id=f"fin_download_{datetime.now().strftime('%Y%m%d%H%M%S')}",
                         status=DownloadTaskStatus.COMPLETED,
                         progress=100.0,
-                        message=f"财务数据下载完成: {len(stock_list)}只股票, {len(table_list)}张表"
+                        message=f"财务数据下载完成: {len(request.stock_list)}只股票, {len(request.table_list)}张表, 日期区间: {request.start_date or '无'} - {request.end_date or '无'}"
                     )
                 except Exception as e:
                     logger.error(f"下载财务数据失败: {e}")
@@ -1192,35 +1216,34 @@ class DataService:
                         message=str(e)
                     )
             
+            # Mock模式
             return DownloadResponse(
                 task_id="mock_fin_download",
                 status=DownloadTaskStatus.COMPLETED,
                 progress=100.0,
-                message="Mock财务数据下载完成"
+                message=f"Mock财务数据下载完成: {len(request.stock_list)}只股票, {len(request.table_list)}张表"
             )
         except Exception as e:
             raise DataServiceException(f"下载财务数据失败: {str(e)}")
     
-    def download_financial_data_batch(self, stock_list: List[str], table_list: List[str],
-                                     start_time: str = '', end_time: str = '',
-                                     callback = None) -> DownloadResponse:
+    def download_financial_data_batch(self, request: DownloadFinancialDataBatchRequest) -> DownloadResponse:
         """批量下载财务数据（带进度回调）"""
         try:
             if self._should_use_real_data():
                 try:
                     xtdata.download_financial_data2(
-                        stock_list=stock_list,
-                        table_list=table_list,
-                        start_time=start_time,
-                        end_time=end_time,
-                        callback=callback
+                        stock_list=request.stock_list,
+                        table_list=request.table_list,
+                        start_time=request.start_date,
+                        end_time=request.end_date,
+                        callback=None  # TODO: 实现回调函数映射
                     )
                     
                     return DownloadResponse(
                         task_id=f"fin_batch_{datetime.now().strftime('%Y%m%d%H%M%S')}",
                         status=DownloadTaskStatus.COMPLETED,
                         progress=100.0,
-                        message=f"批量财务数据下载完成: {len(stock_list)}只股票"
+                        message=f"批量财务数据下载完成: {len(request.stock_list)}只股票"
                     )
                 except Exception as e:
                     logger.error(f"批量下载财务数据失败: {e}")
@@ -1266,18 +1289,19 @@ class DataService:
         except Exception as e:
             raise DataServiceException(f"下载板块数据失败: {str(e)}")
     
-    def download_index_weight(self) -> DownloadResponse:
+    def download_index_weight(self, request: DownloadIndexWeightRequest) -> DownloadResponse:
         """下载指数成分权重信息"""
         try:
             if self._should_use_real_data():
                 try:
+                    # xtdata.download_index_weight() 不接受参数，下载全部
                     xtdata.download_index_weight()
                     
                     return DownloadResponse(
                         task_id=f"index_weight_{datetime.now().strftime('%Y%m%d%H%M%S')}",
                         status=DownloadTaskStatus.COMPLETED,
                         progress=100.0,
-                        message="指数权重下载完成"
+                        message=f"指数权重下载完成{' (指定: ' + request.index_code + ')' if request.index_code else ''}"
                     )
                 except Exception as e:
                     logger.error(f"下载指数权重失败: {e}")
@@ -1390,18 +1414,19 @@ class DataService:
         except Exception as e:
             raise DataServiceException(f"下载节假日数据失败: {str(e)}")
     
-    def download_history_contracts(self) -> DownloadResponse:
+    def download_history_contracts(self, request: DownloadHistoryContractsRequest) -> DownloadResponse:
         """下载过期（退市）合约信息"""
         try:
             if self._should_use_real_data():
                 try:
+                    # xtdata.download_history_contracts() 不接受参数
                     xtdata.download_history_contracts()
                     
                     return DownloadResponse(
                         task_id=f"history_contracts_{datetime.now().strftime('%Y%m%d%H%M%S')}",
                         status=DownloadTaskStatus.COMPLETED,
                         progress=100.0,
-                        message="过期合约数据下载完成"
+                        message=f"过期合约数据下载完成{' (市场: ' + request.market + ')' if request.market else ''}"
                     )
                 except Exception as e:
                     logger.error(f"下载过期合约失败: {e}")
@@ -1555,144 +1580,165 @@ class DataService:
     
     # ==================== 阶段5: Level2数据接口实现 ====================
     
-    def get_l2_quote(self, stock_code: str) -> L2QuoteData:
-        """获取Level2行情快照数据（包含10档行情）"""
+    def get_l2_quote(self, stock_codes: List[str]) -> Dict[str, L2QuoteData]:
+        """获取Level2行情快照数据（包含10档行情）- 支持多标的"""
         try:
+            results = {}
+            
             if self._should_use_real_data():
                 try:
-                    data = xtdata.get_l2_quote([stock_code])
+                    data = xtdata.get_l2_quote(stock_codes)
                     
-                    if not data or stock_code not in data:
-                        raise DataServiceException(f"未找到 {stock_code} 的Level2数据")
+                    if not data:
+                        logger.warning(f"未获取到任何Level2数据")
+                        return results
                     
-                    quote = data[stock_code]
-                    
-                    return L2QuoteData(
-                        time=str(quote.get('time', '')),
-                        last_price=float(quote.get('lastPrice', 0)),
-                        open=quote.get('open'),
-                        high=quote.get('high'),
-                        low=quote.get('low'),
-                        amount=quote.get('amount'),
-                        volume=quote.get('volume'),
-                        pvolume=quote.get('pvolume'),
-                        open_int=quote.get('openInt'),
-                        stock_status=quote.get('stockStatus'),
-                        transaction_num=quote.get('transactionNum'),
-                        last_close=quote.get('lastClose'),
-                        last_settlement_price=quote.get('lastSettlementPrice'),
-                        settlement_price=quote.get('settlementPrice'),
-                        pe=quote.get('pe'),
-                        ask_price=quote.get('askPrice', []),  # 10档卖价
-                        bid_price=quote.get('bidPrice', []),  # 10档买价
-                        ask_vol=quote.get('askVol', []),      # 10档卖量
-                        bid_vol=quote.get('bidVol', [])       # 10档买量
-                    )
+                    for stock_code in stock_codes:
+                        if stock_code in data:
+                            quote = data[stock_code]
+                            results[stock_code] = L2QuoteData(
+                                time=str(quote.get('time', '')),
+                                last_price=float(quote.get('lastPrice', 0)),
+                                open=quote.get('open'),
+                                high=quote.get('high'),
+                                low=quote.get('low'),
+                                amount=quote.get('amount'),
+                                volume=quote.get('volume'),
+                                pvolume=quote.get('pvolume'),
+                                open_int=quote.get('openInt'),
+                                stock_status=quote.get('stockStatus'),
+                                transaction_num=quote.get('transactionNum'),
+                                last_close=quote.get('lastClose'),
+                                last_settlement_price=quote.get('lastSettlementPrice'),
+                                settlement_price=quote.get('settlementPrice'),
+                                pe=quote.get('pe'),
+                                ask_price=quote.get('askPrice', []),  # 10档卖价
+                                bid_price=quote.get('bidPrice', []),  # 10档买价
+                                ask_vol=quote.get('askVol', []),      # 10档卖量
+                                bid_vol=quote.get('bidVol', [])       # 10档买量
+                            )
+                    return results
                 except Exception as e:
                     logger.error(f"获取Level2快照失败: {e}")
-                    raise DataServiceException(f"获取Level2快照失败 [{stock_code}]: {str(e)}")
+                    raise DataServiceException(f"获取Level2快照失败: {str(e)}")
             
-            # Mock数据（包含10档）
-            return L2QuoteData(
-                time=datetime.now().strftime("%Y%m%d%H%M%S"),
-                last_price=100.0,
-                volume=1000000,
-                ask_price=[100.1, 100.2, 100.3, 100.4, 100.5, 100.6, 100.7, 100.8, 100.9, 101.0],
-                bid_price=[99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0],
-                ask_vol=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-                bid_vol=[150, 250, 350, 450, 550, 650, 750, 850, 950, 1050]
-            )
+            # Mock数据（包含10档）- 为每个标的生成
+            for stock_code in stock_codes:
+                results[stock_code] = L2QuoteData(
+                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                    last_price=100.0,
+                    volume=1000000,
+                    ask_price=[100.1, 100.2, 100.3, 100.4, 100.5, 100.6, 100.7, 100.8, 100.9, 101.0],
+                    bid_price=[99.9, 99.8, 99.7, 99.6, 99.5, 99.4, 99.3, 99.2, 99.1, 99.0],
+                    ask_vol=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                    bid_vol=[150, 250, 350, 450, 550, 650, 750, 850, 950, 1050]
+                )
+            return results
         except Exception as e:
             raise DataServiceException(f"获取Level2快照失败: {str(e)}")
     
-    def get_l2_order(self, stock_code: str) -> List[L2OrderData]:
-        """获取Level2逐笔委托数据"""
+    def get_l2_order(self, stock_codes: List[str]) -> Dict[str, List[L2OrderData]]:
+        """获取Level2逐笔委托数据 - 支持多标的"""
         try:
+            results = {}
+            
             if self._should_use_real_data():
                 try:
-                    data = xtdata.get_l2_order([stock_code])
+                    data = xtdata.get_l2_order(stock_codes)
                     
-                    if not data or stock_code not in data:
-                        return []
+                    if not data:
+                        logger.warning(f"未获取到任何Level2委托数据")
+                        return results
                     
-                    orders = data[stock_code]
-                    results = []
-                    
-                    if hasattr(orders, '__iter__'):
-                        for order in orders:
-                            results.append(L2OrderData(
-                                time=str(order.get('time', '')),
-                                price=float(order.get('price', 0)),
-                                volume=int(order.get('volume', 0)),
-                                entrust_no=order.get('entrustNo'),
-                                entrust_type=order.get('entrustType'),
-                                entrust_direction=order.get('entrustDirection')
-                            ))
-                    
+                    for stock_code in stock_codes:
+                        if stock_code in data:
+                            orders = data[stock_code]
+                            order_list = []
+                            
+                            if hasattr(orders, '__iter__'):
+                                for order in orders:
+                                    order_list.append(L2OrderData(
+                                        time=str(order.get('time', '')),
+                                        price=float(order.get('price', 0)),
+                                        volume=int(order.get('volume', 0)),
+                                        entrust_no=order.get('entrustNo'),
+                                        entrust_type=order.get('entrustType'),
+                                        entrust_direction=order.get('entrustDirection')
+                                    ))
+                            results[stock_code] = order_list
                     return results
                 except Exception as e:
                     logger.error(f"获取Level2逐笔委托失败: {e}")
-                    raise DataServiceException(f"获取Level2委托失败 [{stock_code}]: {str(e)}")
+                    raise DataServiceException(f"获取Level2委托失败: {str(e)}")
             
-            # Mock数据
-            return [
-                L2OrderData(
-                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
-                    price=100.0,
-                    volume=1000,
-                    entrust_no="123456",
-                    entrust_type=1,
-                    entrust_direction=1
-                )
-            ]
+            # Mock数据 - 为每个标的生成
+            for stock_code in stock_codes:
+                results[stock_code] = [
+                    L2OrderData(
+                        time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                        price=100.0,
+                        volume=1000,
+                        entrust_no="123456",
+                        entrust_type=1,
+                        entrust_direction=1
+                    )
+                ]
+            return results
         except Exception as e:
             raise DataServiceException(f"获取Level2委托失败: {str(e)}")
     
-    def get_l2_transaction(self, stock_code: str) -> List[L2TransactionData]:
-        """获取Level2逐笔成交数据"""
+    def get_l2_transaction(self, stock_codes: List[str]) -> Dict[str, List[L2TransactionData]]:
+        """获取Level2逐笔成交数据 - 支持多标的"""
         try:
+            results = {}
+            
             if self._should_use_real_data():
                 try:
-                    data = xtdata.get_l2_transaction([stock_code])
+                    data = xtdata.get_l2_transaction(stock_codes)
                     
-                    if not data or stock_code not in data:
-                        return []
+                    if not data:
+                        logger.warning(f"未获取到任何Level2成交数据")
+                        return results
                     
-                    transactions = data[stock_code]
-                    results = []
-                    
-                    if hasattr(transactions, '__iter__'):
-                        for trans in transactions:
-                            results.append(L2TransactionData(
-                                time=str(trans.get('time', '')),
-                                price=float(trans.get('price', 0)),
-                                volume=int(trans.get('volume', 0)),
-                                amount=float(trans.get('amount', 0)),
-                                trade_index=trans.get('tradeIndex'),
-                                buy_no=trans.get('buyNo'),
-                                sell_no=trans.get('sellNo'),
-                                trade_type=trans.get('tradeType'),
-                                trade_flag=trans.get('tradeFlag')
-                            ))
-                    
+                    for stock_code in stock_codes:
+                        if stock_code in data:
+                            transactions = data[stock_code]
+                            trans_list = []
+                            
+                            if hasattr(transactions, '__iter__'):
+                                for trans in transactions:
+                                    trans_list.append(L2TransactionData(
+                                        time=str(trans.get('time', '')),
+                                        price=float(trans.get('price', 0)),
+                                        volume=int(trans.get('volume', 0)),
+                                        amount=float(trans.get('amount', 0)),
+                                        trade_index=trans.get('tradeIndex'),
+                                        buy_no=trans.get('buyNo'),
+                                        sell_no=trans.get('sellNo'),
+                                        trade_type=trans.get('tradeType'),
+                                        trade_flag=trans.get('tradeFlag')
+                                    ))
+                            results[stock_code] = trans_list
                     return results
                 except Exception as e:
                     logger.error(f"获取Level2逐笔成交失败: {e}")
-                    raise DataServiceException(f"获取Level2成交失败 [{stock_code}]: {str(e)}")
+                    raise DataServiceException(f"获取Level2成交失败: {str(e)}")
             
-            # Mock数据
-            return [
-                L2TransactionData(
-                    time=datetime.now().strftime("%Y%m%d%H%M%S"),
-                    price=100.0,
-                    volume=1000,
-                    amount=100000.0,
-                    trade_index="1",
-                    buy_no="B123",
-                    sell_no="S456",
-                    trade_type=1,
-                    trade_flag=1
-                )
-            ]
+            # Mock数据 - 为每个标的生成
+            for stock_code in stock_codes:
+                results[stock_code] = [
+                    L2TransactionData(
+                        time=datetime.now().strftime("%Y%m%d%H%M%S"),
+                        price=100.0,
+                        volume=1000,
+                        amount=100000.0,
+                        trade_index="1",
+                        buy_no="B123",
+                        sell_no="S456",
+                        trade_type=1,
+                        trade_flag=1
+                    )
+                ]
+            return results
         except Exception as e:
             raise DataServiceException(f"获取Level2成交失败: {str(e)}")

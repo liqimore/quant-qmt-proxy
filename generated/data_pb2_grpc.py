@@ -217,6 +217,31 @@ class DataServiceStub(object):
                 request_serializer=data__pb2.L2TransactionRequest.SerializeToString,
                 response_deserializer=data__pb2.L2TransactionResponse.FromString,
                 _registered_method=True)
+        self.SubscribeQuote = channel.unary_stream(
+                '/qmt.data.DataService/SubscribeQuote',
+                request_serializer=data__pb2.SubscriptionRequest.SerializeToString,
+                response_deserializer=data__pb2.QuoteUpdate.FromString,
+                _registered_method=True)
+        self.SubscribeWholeQuote = channel.unary_stream(
+                '/qmt.data.DataService/SubscribeWholeQuote',
+                request_serializer=data__pb2.WholeQuoteRequest.SerializeToString,
+                response_deserializer=data__pb2.QuoteUpdate.FromString,
+                _registered_method=True)
+        self.UnsubscribeQuote = channel.unary_unary(
+                '/qmt.data.DataService/UnsubscribeQuote',
+                request_serializer=data__pb2.UnsubscribeRequest.SerializeToString,
+                response_deserializer=data__pb2.UnsubscribeResponse.FromString,
+                _registered_method=True)
+        self.GetSubscriptionInfo = channel.unary_unary(
+                '/qmt.data.DataService/GetSubscriptionInfo',
+                request_serializer=data__pb2.SubscriptionInfoRequest.SerializeToString,
+                response_deserializer=data__pb2.SubscriptionInfoResponse.FromString,
+                _registered_method=True)
+        self.ListSubscriptions = channel.unary_unary(
+                '/qmt.data.DataService/ListSubscriptions',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.SubscriptionListResponse.FromString,
+                _registered_method=True)
 
 
 class DataServiceServicer(object):
@@ -482,6 +507,42 @@ class DataServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SubscribeQuote(self, request, context):
+        """===== 阶段6: 行情订阅接口 =====
+        订阅行情（Server Streaming）
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeWholeQuote(self, request, context):
+        """订阅全推行情（Server Streaming）
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UnsubscribeQuote(self, request, context):
+        """取消订阅
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSubscriptionInfo(self, request, context):
+        """获取订阅信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListSubscriptions(self, request, context):
+        """列出所有订阅
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DataServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -664,6 +725,31 @@ def add_DataServiceServicer_to_server(servicer, server):
                     servicer.GetL2Transaction,
                     request_deserializer=data__pb2.L2TransactionRequest.FromString,
                     response_serializer=data__pb2.L2TransactionResponse.SerializeToString,
+            ),
+            'SubscribeQuote': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeQuote,
+                    request_deserializer=data__pb2.SubscriptionRequest.FromString,
+                    response_serializer=data__pb2.QuoteUpdate.SerializeToString,
+            ),
+            'SubscribeWholeQuote': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeWholeQuote,
+                    request_deserializer=data__pb2.WholeQuoteRequest.FromString,
+                    response_serializer=data__pb2.QuoteUpdate.SerializeToString,
+            ),
+            'UnsubscribeQuote': grpc.unary_unary_rpc_method_handler(
+                    servicer.UnsubscribeQuote,
+                    request_deserializer=data__pb2.UnsubscribeRequest.FromString,
+                    response_serializer=data__pb2.UnsubscribeResponse.SerializeToString,
+            ),
+            'GetSubscriptionInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSubscriptionInfo,
+                    request_deserializer=data__pb2.SubscriptionInfoRequest.FromString,
+                    response_serializer=data__pb2.SubscriptionInfoResponse.SerializeToString,
+            ),
+            'ListSubscriptions': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSubscriptions,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.SubscriptionListResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1640,6 +1726,141 @@ class DataService(object):
             '/qmt.data.DataService/GetL2Transaction',
             data__pb2.L2TransactionRequest.SerializeToString,
             data__pb2.L2TransactionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/qmt.data.DataService/SubscribeQuote',
+            data__pb2.SubscriptionRequest.SerializeToString,
+            data__pb2.QuoteUpdate.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeWholeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/qmt.data.DataService/SubscribeWholeQuote',
+            data__pb2.WholeQuoteRequest.SerializeToString,
+            data__pb2.QuoteUpdate.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UnsubscribeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/UnsubscribeQuote',
+            data__pb2.UnsubscribeRequest.SerializeToString,
+            data__pb2.UnsubscribeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSubscriptionInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetSubscriptionInfo',
+            data__pb2.SubscriptionInfoRequest.SerializeToString,
+            data__pb2.SubscriptionInfoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSubscriptions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/ListSubscriptions',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.SubscriptionListResponse.FromString,
             options,
             channel_credentials,
             insecure,

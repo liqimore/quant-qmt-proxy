@@ -548,17 +548,27 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.LocalDataResponse:
         """获取本地行情数据"""
         try:
-            result = self.data_service.get_local_data(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time,
-                request.period
+            # 构造LocalDataRequest对象
+            from app.models.data_models import LocalDataRequest as LocalDataReq
+            req = LocalDataReq(
+                stock_codes=list(request.stock_codes),
+                start_time=request.start_time,
+                end_time=request.end_time,
+                period=request.period,
+                fields=list(request.fields) if request.fields else None,
+                adjust_type=request.adjust_type if request.adjust_type else "none"
             )
             
+            # 调用服务层，返回 List[MarketDataResponse]
+            result = self.data_service.get_local_data(req)
+            
+            # 遍历响应列表，构造 gRPC 响应
             data_map = {}
-            for stock_code, kline_data in result.items():
+            for market_data_response in result:
+                stock_code = market_data_response.stock_code
                 bars = []
-                for item in kline_data:
+                # market_data_response.data 是 List[Dict[str, Any]]
+                for item in market_data_response.data:
                     bar = data_pb2.KlineBar(
                         time=str(item.get('time', '')),
                         open=float(item.get('open', 0.0)),
@@ -589,34 +599,38 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.FullTickResponse:
         """获取完整tick数据"""
         try:
-            result = self.data_service.get_full_tick(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time
+            # 构建FullTickRequest对象
+            from app.models.data_models import FullTickRequest as FullTickReq
+            req = FullTickReq(
+                stock_codes=list(request.stock_codes),
+                start_time=request.start_time,
+                end_time=request.end_time
             )
+            result = self.data_service.get_full_tick(req)
             
             data_map = {}
             for stock_code, tick_list in result.items():
                 ticks = []
                 for tick in tick_list:
+                    # tick 是 TickData Pydantic 模型，使用属性访问
                     tick_data = data_pb2.TickData(
-                        time=tick.get('time', ''),
-                        last_price=tick.get('last_price', 0.0),
-                        open=tick.get('open', 0.0),
-                        high=tick.get('high', 0.0),
-                        low=tick.get('low', 0.0),
-                        last_close=tick.get('last_close', 0.0),
-                        amount=tick.get('amount', 0.0),
-                        volume=tick.get('volume', 0),
-                        pvolume=tick.get('pvolume', 0),
-                        stock_status=tick.get('stock_status', 0),
-                        open_int=tick.get('open_int', 0),
-                        last_settlement_price=tick.get('last_settlement_price', 0.0),
-                        ask_price=tick.get('ask_price', []),
-                        bid_price=tick.get('bid_price', []),
-                        ask_vol=tick.get('ask_vol', []),
-                        bid_vol=tick.get('bid_vol', []),
-                        transaction_num=tick.get('transaction_num', 0)
+                        time=tick.time or '',
+                        last_price=tick.last_price,
+                        open=tick.open or 0.0,
+                        high=tick.high or 0.0,
+                        low=tick.low or 0.0,
+                        last_close=tick.last_close or 0.0,
+                        amount=tick.amount or 0.0,
+                        volume=tick.volume or 0,
+                        pvolume=tick.pvolume or 0,
+                        stock_status=tick.stock_status or 0,
+                        open_int=tick.open_int or 0,
+                        last_settlement_price=tick.last_settlement_price or 0.0,
+                        ask_price=tick.ask_price or [],
+                        bid_price=tick.bid_price or [],
+                        ask_vol=tick.ask_vol or [],
+                        bid_vol=tick.bid_vol or [],
+                        transaction_num=tick.transaction_num or 0
                     )
                     ticks.append(tick_data)
                 data_map[stock_code] = data_pb2.TickDataList(ticks=ticks)
@@ -673,17 +687,27 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.FullKlineResponse:
         """获取完整K线数据"""
         try:
-            result = self.data_service.get_full_kline(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time,
-                request.period
+            # 构造FullKlineRequest对象
+            from app.models.data_models import FullKlineRequest as FullKlineReq
+            req = FullKlineReq(
+                stock_codes=list(request.stock_codes),
+                start_time=request.start_time,
+                end_time=request.end_time,
+                period=request.period,
+                fields=list(request.fields) if request.fields else None,
+                adjust_type=request.adjust_type if request.adjust_type else "none"
             )
             
+            # 调用服务层，返回 List[MarketDataResponse]
+            result = self.data_service.get_full_kline(req)
+            
+            # 遍历响应列表，构造 gRPC 响应
             data_map = {}
-            for stock_code, kline_data in result.items():
+            for market_data_response in result:
+                stock_code = market_data_response.stock_code
                 bars = []
-                for item in kline_data:
+                # market_data_response.data 是 List[Dict[str, Any]]
+                for item in market_data_response.data:
                     bar = data_pb2.KlineBar(
                         time=str(item.get('time', '')),
                         open=float(item.get('open', 0.0)),
@@ -1200,39 +1224,34 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.L2QuoteResponse:
         """获取Level2快照数据"""
         try:
-            result = self.data_service.get_l2_quote(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time
-            )
+            result = self.data_service.get_l2_quote(list(request.stock_codes))
             
             data_map = {}
-            for stock_code, quote_list in result.items():
-                quotes = []
-                for quote in quote_list:
-                    quote_data = data_pb2.L2QuoteData(
-                        time=quote.get('time', ''),
-                        last_price=quote.get('last_price', 0.0),
-                        open=quote.get('open', 0.0),
-                        high=quote.get('high', 0.0),
-                        low=quote.get('low', 0.0),
-                        amount=quote.get('amount', 0.0),
-                        volume=quote.get('volume', 0),
-                        pvolume=quote.get('pvolume', 0),
-                        open_int=quote.get('open_int', 0),
-                        stock_status=quote.get('stock_status', 0),
-                        transaction_num=quote.get('transaction_num', 0),
-                        last_close=quote.get('last_close', 0.0),
-                        last_settlement_price=quote.get('last_settlement_price', 0.0),
-                        settlement_price=quote.get('settlement_price', 0.0),
-                        pe=quote.get('pe', 0.0),
-                        ask_price=quote.get('ask_price', []),
-                        bid_price=quote.get('bid_price', []),
-                        ask_vol=quote.get('ask_vol', []),
-                        bid_vol=quote.get('bid_vol', [])
-                    )
-                    quotes.append(quote_data)
-                data_map[stock_code] = data_pb2.L2QuoteDataList(quotes=quotes)
+            for stock_code, quote in result.items():
+                # quote 是单个 L2QuoteData 对象，包装为列表
+                quote_data = data_pb2.L2QuoteData(
+                    time=quote.time or '',
+                    last_price=quote.last_price,
+                    open=quote.open or 0.0,
+                    high=quote.high or 0.0,
+                    low=quote.low or 0.0,
+                    amount=quote.amount or 0.0,
+                    volume=quote.volume or 0,
+                    pvolume=quote.pvolume or 0,
+                    open_int=quote.open_int or 0,
+                    stock_status=quote.stock_status or 0,
+                    transaction_num=quote.transaction_num or 0,
+                    last_close=quote.last_close or 0.0,
+                    last_settlement_price=quote.last_settlement_price or 0.0,
+                    settlement_price=quote.settlement_price or 0.0,
+                    pe=quote.pe or 0.0,
+                    ask_price=quote.ask_price or [],
+                    bid_price=quote.bid_price or [],
+                    ask_vol=quote.ask_vol or [],
+                    bid_vol=quote.bid_vol or []
+                )
+                # 包装为列表
+                data_map[stock_code] = data_pb2.L2QuoteDataList(quotes=[quote_data])
             
             return data_pb2.L2QuoteResponse(
                 data=data_map,
@@ -1252,23 +1271,20 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.L2OrderResponse:
         """获取Level2逐笔委托"""
         try:
-            result = self.data_service.get_l2_order(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time
-            )
+            result = self.data_service.get_l2_order(list(request.stock_codes))
             
             data_map = {}
             for stock_code, order_list in result.items():
                 orders = []
                 for order in order_list:
+                    # order 是 L2OrderData Pydantic 模型
                     order_data = data_pb2.L2OrderData(
-                        time=order.get('time', ''),
-                        price=order.get('price', 0.0),
-                        volume=order.get('volume', 0),
-                        entrust_no=order.get('entrust_no', 0),
-                        entrust_type=order.get('entrust_type', 0),
-                        entrust_direction=order.get('entrust_direction', 0)
+                        time=order.time or '',
+                        price=order.price,
+                        volume=order.volume,
+                        entrust_no=order.entrust_no or 0,
+                        entrust_type=order.entrust_type or 0,
+                        entrust_direction=order.entrust_direction or 0
                     )
                     orders.append(order_data)
                 data_map[stock_code] = data_pb2.L2OrderDataList(orders=orders)
@@ -1291,26 +1307,23 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
     ) -> data_pb2.L2TransactionResponse:
         """获取Level2逐笔成交"""
         try:
-            result = self.data_service.get_l2_transaction(
-                list(request.stock_codes),
-                request.start_time,
-                request.end_time
-            )
+            result = self.data_service.get_l2_transaction(list(request.stock_codes))
             
             data_map = {}
             for stock_code, trans_list in result.items():
                 transactions = []
                 for trans in trans_list:
+                    # trans 是 L2TransactionData Pydantic 模型
                     trans_data = data_pb2.L2TransactionData(
-                        time=trans.get('time', ''),
-                        price=trans.get('price', 0.0),
-                        volume=trans.get('volume', 0),
-                        amount=trans.get('amount', 0.0),
-                        trade_index=trans.get('trade_index', 0),
-                        buy_no=trans.get('buy_no', 0),
-                        sell_no=trans.get('sell_no', 0),
-                        trade_type=trans.get('trade_type', 0),
-                        trade_flag=trans.get('trade_flag', 0)
+                        time=trans.time or '',
+                        price=trans.price,
+                        volume=trans.volume,
+                        amount=trans.amount or 0.0,
+                        trade_index=trans.trade_index or 0,
+                        buy_no=trans.buy_no or 0,
+                        sell_no=trans.sell_no or 0,
+                        trade_type=trans.trade_type or 0,
+                        trade_flag=trans.trade_flag or 0
                     )
                     transactions.append(trans_data)
                 data_map[stock_code] = data_pb2.L2TransactionDataList(transactions=transactions)
@@ -1323,6 +1336,308 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
             return data_pb2.L2TransactionResponse(
+                status=common_pb2.Status(code=500, message=str(e))
+            )
+    
+    # ==================== 阶段6: 行情订阅接口 ====================
+    
+    def SubscribeQuote(
+        self,
+        request: data_pb2.SubscriptionRequest,
+        context: grpc.ServicerContext
+    ):
+        """
+        订阅行情（Server Streaming）
+        
+        持续推送行情数据，直到客户端断开连接
+        """
+        from app.config import get_settings
+        from app.dependencies import get_subscription_manager
+        from datetime import datetime
+        import asyncio
+        
+        try:
+            settings = get_settings()
+            subscription_manager = get_subscription_manager(settings)
+            
+            # 检测当前线程是否已有事件循环
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # 没有事件循环，创建新的
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                # 通知订阅管理器使用此事件循环
+                subscription_manager.set_event_loop(loop)
+            
+            # 验证股票代码列表
+            if not request.symbols or len(list(request.symbols)) == 0:
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                context.set_details("股票代码列表不能为空")
+                return
+            
+            # 创建订阅
+            subscription_id = subscription_manager.subscribe_quote(
+                symbols=list(request.symbols),
+                adjust_type=request.adjust_type or "none"
+            )
+            
+            # 记录订阅信息
+            context.set_code(grpc.StatusCode.OK)
+            
+            # 流式推送数据
+            async def stream_data():
+                try:
+                    async for quote_data in subscription_manager.stream_quotes(subscription_id):
+                        # 构造protobuf消息
+                        quote_update = data_pb2.QuoteUpdate(
+                            stock_code=quote_data.get('stock_code', ''),
+                            timestamp=quote_data.get('timestamp', datetime.now().isoformat()),
+                            last_price=quote_data.get('last_price', 0.0),
+                            open=quote_data.get('open', 0.0),
+                            high=quote_data.get('high', 0.0),
+                            low=quote_data.get('low', 0.0),
+                            close=quote_data.get('close', 0.0),
+                            volume=quote_data.get('volume', 0),
+                            amount=quote_data.get('amount', 0.0),
+                            pre_close=quote_data.get('pre_close', 0.0),
+                            bid_price=quote_data.get('bid_price', []),
+                            ask_price=quote_data.get('ask_price', []),
+                            bid_vol=quote_data.get('bid_vol', []),
+                            ask_vol=quote_data.get('ask_vol', [])
+                        )
+                        
+                        yield quote_update
+                        
+                        # 检查客户端是否断开
+                        if context.is_active() is False:
+                            break
+                
+                finally:
+                    # 清理订阅
+                    subscription_manager.unsubscribe(subscription_id)
+            
+            # 使用事件循环迭代异步生成器
+            try:
+                async_gen = stream_data()
+                while True:
+                    try:
+                        quote_update = loop.run_until_complete(async_gen.__anext__())
+                        yield quote_update
+                    except StopAsyncIteration:
+                        break
+            finally:
+                # 只在当前线程创建的循环时才关闭
+                if not loop.is_running():
+                    loop.close()
+        
+        except DataServiceException as e:
+            # 处理业务异常
+            if e.error_code in ["EMPTY_SYMBOLS", "INVALID_SYMBOLS"]:
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            else:
+                context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details(str(e.message))
+            return
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return
+    
+    def SubscribeWholeQuote(
+        self,
+        request: data_pb2.WholeQuoteRequest,
+        context: grpc.ServicerContext
+    ):
+        """
+        订阅全推行情（Server Streaming）
+        """
+        from app.config import get_settings
+        from app.dependencies import get_subscription_manager
+        from datetime import datetime
+        import asyncio
+        
+        try:
+            settings = get_settings()
+            subscription_manager = get_subscription_manager(settings)
+            
+            # 检测当前线程是否已有事件循环
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # 没有事件循环，创建新的
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                # 通知订阅管理器使用此事件循环
+                subscription_manager.set_event_loop(loop)
+            
+            # 创建全推订阅
+            subscription_id = subscription_manager.subscribe_whole_quote()
+            
+            context.set_code(grpc.StatusCode.OK)
+            
+            # 流式推送数据
+            async def stream_data():
+                try:
+                    async for quote_data in subscription_manager.stream_quotes(subscription_id):
+                        quote_update = data_pb2.QuoteUpdate(
+                            stock_code=quote_data.get('stock_code', ''),
+                            timestamp=quote_data.get('timestamp', datetime.now().isoformat()),
+                            last_price=quote_data.get('last_price', 0.0),
+                            open=quote_data.get('open', 0.0),
+                            high=quote_data.get('high', 0.0),
+                            low=quote_data.get('low', 0.0),
+                            close=quote_data.get('close', 0.0),
+                            volume=quote_data.get('volume', 0),
+                            amount=quote_data.get('amount', 0.0),
+                            pre_close=quote_data.get('pre_close', 0.0),
+                            bid_price=quote_data.get('bid_price', []),
+                            ask_price=quote_data.get('ask_price', []),
+                            bid_vol=quote_data.get('bid_vol', []),
+                            ask_vol=quote_data.get('ask_vol', [])
+                        )
+                        
+                        yield quote_update
+                        
+                        if context.is_active() is False:
+                            break
+                
+                finally:
+                    subscription_manager.unsubscribe(subscription_id)
+            
+            # 使用事件循环迭代异步生成器
+            try:
+                async_gen = stream_data()
+                while True:
+                    try:
+                        quote_update = loop.run_until_complete(async_gen.__anext__())
+                        yield quote_update
+                    except StopAsyncIteration:
+                        break
+            finally:
+                # 只在当前线程创建的循环时才关闭
+                if not loop.is_running():
+                    loop.close()
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return
+    
+    def UnsubscribeQuote(
+        self,
+        request: data_pb2.UnsubscribeRequest,
+        context: grpc.ServicerContext
+    ) -> data_pb2.UnsubscribeResponse:
+        """取消订阅"""
+        from app.config import get_settings
+        from app.dependencies import get_subscription_manager
+        
+        try:
+            settings = get_settings()
+            subscription_manager = get_subscription_manager(settings)
+            
+            # 取消订阅
+            success = subscription_manager.unsubscribe(request.subscription_id)
+            
+            return data_pb2.UnsubscribeResponse(
+                success=success,
+                message="订阅已取消" if success else "订阅不存在",
+                status=common_pb2.Status(code=0, message="success")
+            )
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return data_pb2.UnsubscribeResponse(
+                success=False,
+                message=str(e),
+                status=common_pb2.Status(code=500, message=str(e))
+            )
+    
+    def GetSubscriptionInfo(
+        self,
+        request: data_pb2.SubscriptionInfoRequest,
+        context: grpc.ServicerContext
+    ) -> data_pb2.SubscriptionInfoResponse:
+        """获取订阅信息"""
+        from app.config import get_settings
+        from app.dependencies import get_subscription_manager
+        
+        try:
+            settings = get_settings()
+            subscription_manager = get_subscription_manager(settings)
+            
+            # 获取订阅信息
+            info = subscription_manager.get_subscription_info(request.subscription_id)
+            
+            if not info:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details(f"订阅不存在: {request.subscription_id}")
+                return data_pb2.SubscriptionInfoResponse(
+                    status=common_pb2.Status(code=404, message="订阅不存在")
+                )
+            
+            return data_pb2.SubscriptionInfoResponse(
+                subscription_id=info['subscription_id'],
+                symbols=info['symbols'],
+                adjust_type=info['adjust_type'],
+                subscription_type=info['subscription_type'],
+                created_at=info['created_at'],
+                last_heartbeat=info['last_heartbeat'],
+                active=info['active'],
+                queue_size=info['queue_size'],
+                status=common_pb2.Status(code=0, message="success")
+            )
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return data_pb2.SubscriptionInfoResponse(
+                status=common_pb2.Status(code=500, message=str(e))
+            )
+    
+    def ListSubscriptions(
+        self,
+        request: empty_pb2.Empty,
+        context: grpc.ServicerContext
+    ) -> data_pb2.SubscriptionListResponse:
+        """列出所有订阅"""
+        from app.config import get_settings
+        from app.dependencies import get_subscription_manager
+        
+        try:
+            settings = get_settings()
+            subscription_manager = get_subscription_manager(settings)
+            
+            # 列出所有订阅
+            subscriptions = subscription_manager.list_subscriptions()
+            
+            # 构造响应
+            sub_list = []
+            for info in subscriptions:
+                sub_info = data_pb2.SubscriptionInfoResponse(
+                    subscription_id=info['subscription_id'],
+                    symbols=info['symbols'],
+                    adjust_type=info['adjust_type'],
+                    subscription_type=info['subscription_type'],
+                    created_at=info['created_at'],
+                    last_heartbeat=info['last_heartbeat'],
+                    active=info['active'],
+                    queue_size=info['queue_size'],
+                    status=common_pb2.Status(code=0, message="success")
+                )
+                sub_list.append(sub_info)
+            
+            return data_pb2.SubscriptionListResponse(
+                subscriptions=sub_list,
+                status=common_pb2.Status(code=0, message="success")
+            )
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return data_pb2.SubscriptionListResponse(
                 status=common_pb2.Status(code=500, message=str(e))
             )
 
