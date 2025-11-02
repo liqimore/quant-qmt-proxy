@@ -1,17 +1,17 @@
 # xtquant-proxy
 
-> 🚧 **开发状态**: v0.0.1 开发中 | 当前版本仅供学习和测试使用，请勿用于生产环境
+> 🚧 **开发状态**: v0.0.1 迭代中 | 当前版本覆盖 REST/gRPC/WebSocket 多协议，默认用于本地联调与策略验证，请勿直接用于生产环境
 
 <div align="center">
 
-**基于 FastAPI + gRPC 的 xtquant 量化交易代理服务**
+**基于 FastAPI + gRPC + WebSocket 的 xtquant 量化交易代理服务**
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![gRPC](https://img.shields.io/badge/gRPC-1.60+-orange.svg)](https://grpc.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-提供 **RESTful API** 和 **gRPC** 双协议接口，封装国金 QMT xtquant SDK 的数据和交易功能
+提供 **RESTful API**、**gRPC** 与 **WebSocket** 多协议接口，封装国金 QMT xtquant SDK 的数据和交易功能
 
 [快速开始](#-快速开始) • [API 文档](#-api接口说明) • [技术架构](#-技术架构) • [测试覆盖](#-测试覆盖)
 
@@ -24,6 +24,7 @@
 ### 🎯 双协议支持
 - 🌐 **REST API**: 基于 FastAPI，提供 HTTP/HTTPS 接口，自动生成 Swagger 文档
 - ⚡ **gRPC**: 高性能 RPC 框架，支持流式调用和双向通信
+- 🔔 **WebSocket**: 提供行情订阅实时推送，内置心跳与限流控制
 - 🔄 **统一服务**: 两种协议共享相同的业务逻辑层，一次部署同时服务
 
 ### 🛡️ 安全可靠
@@ -33,7 +34,7 @@
 - 🔒 **异常保护**: 全局异常处理，xtdata 连接超时保护
 
 ### 📊 功能完整
-- 📈 **市场数据**: K线、分时、tick、财务数据、板块数据
+- 📈 **市场数据**: K线、分时、tick、财务数据、板块数据、行情订阅
 - 💼 **交易功能**: 下单、撤单、持仓查询、订单管理
 - ❤️ **健康检查**: REST 和 gRPC 双协议健康检查
 - 🎯 **三种模式**: mock/dev/prod 灵活切换
@@ -61,14 +62,16 @@ quant-qmt-proxy/
 │   ├── routers/                # REST API 路由
 │   │   ├── data.py             # 数据服务 API
 │   │   ├── trading.py          # 交易服务 API
-│   │   └── health.py           # 健康检查 API
+│   │   ├── health.py           # 健康检查 API
+│   │   └── websocket.py        # WebSocket 行情推送
 │   ├── grpc_services/          # gRPC 服务实现
 │   │   ├── data_grpc_service.py      # 数据服务 gRPC
 │   │   ├── trading_grpc_service.py   # 交易服务 gRPC
 │   │   └── health_grpc_service.py    # 健康检查 gRPC
 │   ├── services/               # 业务服务层（REST 和 gRPC 共享）
 │   │   ├── data_service.py     # 数据服务（xtdata 封装）
-│   │   └── trading_service.py  # 交易服务（xttrader 封装）
+│   │   ├── trading_service.py  # 交易服务（xttrader 封装）
+│   │   └── subscription_manager.py  # 行情订阅管理器
 │   └── utils/                  # 工具函数
 │       ├── exceptions.py       # 自定义异常
 │       ├── helpers.py          # 辅助函数
@@ -105,6 +108,28 @@ quant-qmt-proxy/
 
 ---
 
+## 📈 最新进展
+
+### 🎉 v0.0.1-dev (2025-11-02)
+
+**核心修复与增强**:
+- ✅ **修复 gRPC 行情订阅**: 解决 asyncio.Queue 在 gRPC 线程中无法创建的问题，实现惰性队列初始化
+- ✅ **复权参数透传**: 实现 `adjust_type` (前复权/后复权) 正确传递到 xtdata API
+- ✅ **空标的校验**: 添加多层验证（Pydantic + 业务逻辑 + gRPC），禁止创建空股票列表订阅
+- ✅ **事件循环管理**: gRPC 服务自动检测并创建事件循环，确保订阅管理器正常运行
+- ✅ **测试覆盖增强**: gRPC 订阅测试全部通过 (7 passed, 1 skipped)
+
+**测试结果**:
+```
+tests/grpc/test_subscription_grpc.py::TestSubscriptionGrpc
+✅ test_subscribe_quote_mock_mode - 基本订阅功能
+✅ test_unsubscribe_quote - 取消订阅
+✅ test_get_subscription_info - 获取订阅信息
+✅ test_subscribe_with_adjust_type - 复权类型订阅
+✅ test_subscribe_with_empty_symbols - 空标的校验
+7 passed, 1 skipped in 1.35s
+```
+
 ## 近期用例测试结果
 <img width="1106" height="619" alt="image" src="https://github.com/user-attachments/assets/c0f56377-e74e-4d70-88bc-bd194b2cf430" />
 
@@ -121,6 +146,8 @@ quant-qmt-proxy/
 ```bash
 pip install -r requirements.txt
 ```
+
+> 建议先使用 `python -m venv .venv` 创建虚拟环境并激活，再安装依赖；根据实际凭证将 `env.example` 复制为 `.env` 后补全机密配置。
 
 ### 3. 配置 QMT 路径
 
@@ -157,6 +184,7 @@ $env:APP_MODE="prod"; python run.py
 | **Swagger UI** | http://localhost:8000/docs | 交互式 API 文档 |
 | **ReDoc** | http://localhost:8000/redoc | API 文档（阅读友好） |
 | **健康检查** | http://localhost:8000/health/ | 服务健康状态 |
+| **WebSocket 测试页** | http://localhost:8000/ws/test | 行情推送调试页面 |
 
 ### 6. 运行测试
 
@@ -220,6 +248,11 @@ pytest tests/ -v
 - `POST /api/v1/data/index-weight` - 获取指数权重
 - `GET /api/v1/data/trading-calendar/{year}` - 获取交易日历
 - `GET /api/v1/data/instrument/{stock_code}` - 获取合约信息
+- `GET /api/v1/data/etf/{etf_code}` - 获取 ETF 基础信息
+- `POST /api/v1/data/subscription` - 创建行情订阅（支持前复权/后复权）
+- `GET /api/v1/data/subscription/{subscription_id}` - 查询订阅详情
+- `GET /api/v1/data/subscriptions` - 获取订阅列表
+- `DELETE /api/v1/data/subscription/{subscription_id}` - 取消订阅
 
 #### 交易服务 (`/api/v1/trading/`)
 - `POST /api/v1/trading/connect` - 连接交易账户
@@ -230,6 +263,10 @@ pytest tests/ -v
 - `POST /api/v1/trading/cancel/{session_id}` - 撤销订单
 - `GET /api/v1/trading/orders/{session_id}` - 获取订单列表
 - `GET /api/v1/trading/trades/{session_id}` - 获取成交记录
+- `GET /api/v1/trading/asset/{session_id}` - 获取资产信息
+- `GET /api/v1/trading/risk/{session_id}` - 获取风险指标
+- `GET /api/v1/trading/strategies/{session_id}` - 获取策略列表
+- `GET /api/v1/trading/status/{session_id}` - 查询连接状态
 
 #### 系统服务 (`/health/`)
 - `GET /health/` - 健康检查
@@ -246,6 +283,11 @@ pytest tests/ -v
 - `GetIndexWeight()` - 获取指数权重
 - `GetTradingCalendar()` - 获取交易日历
 - `GetInstrumentDetail()` - 获取合约信息
+- `SubscribeQuote()` - 订阅行情（流式推送，支持复权）
+- `SubscribeWholeQuote()` - 订阅全推行情（流式推送）
+- `UnsubscribeQuote()` - 取消订阅
+- `GetSubscriptionInfo()` - 获取订阅详情
+- `ListSubscriptions()` - 列出所有订阅
 
 #### 交易服务 (TradingService)
 - `Connect()` - 连接交易账户
@@ -256,10 +298,24 @@ pytest tests/ -v
 - `CancelOrder()` - 撤销订单
 - `GetOrders()` - 查询订单
 - `GetTrades()` - 查询成交
+- `GetAsset()` - 查询资产
+- `GetRiskInfo()` - 查询风险
+- `GetStrategies()` - 查询策略列表
 
 #### 健康检查服务 (HealthService)
 - `Check()` - 健康检查
 - `Watch()` - 健康状态订阅（流式）
+
+### WebSocket 接口
+- `GET /ws/quote/{subscription_id}` - 行情订阅推送，支持 `ping/pong` 心跳
+- `GET /ws/test` - 内置测试页面，可浏览器直接调试订阅
+
+> **✨ 行情订阅特性**: 
+> - 支持多股票同时订阅
+> - 支持复权类型选择（none/front/back）
+> - 自动队列管理，防止内存溢出
+> - gRPC 流式推送，低延迟高吞吐
+> - WebSocket 实时推送，内置心跳与重连
 
 ---
 
@@ -284,9 +340,10 @@ pytest tests/ -v
 ### 架构优势
 - 🎯 **分层架构**: Router → Service → SDK，职责清晰
 - 🔄 **代码复用**: REST 和 gRPC 共享同一套业务服务
-- ⚡ **高性能**: gRPC 二进制传输，FastAPI 异步处理
-- 🛡️ **可靠性**: 完整的异常处理和日志记录
+- ⚡ **高性能**: gRPC 二进制传输，FastAPI 异步处理，惰性队列初始化
+- 🛡️ **可靠性**: 完整的异常处理、多层数据校验、事件循环自动管理
 - 📈 **可扩展**: 易于添加新接口和功能
+- 🧵 **线程安全**: gRPC 订阅支持多线程环境，自动处理事件循环
 
 ---
 
@@ -296,16 +353,21 @@ pytest tests/ -v
 - ✅ 健康检查测试
 - ✅ 数据服务测试（市场数据、财务数据、板块数据）
 - ✅ 交易服务测试（下单、撤单、持仓查询）
+- ✅ 行情订阅测试（订阅创建、查询、取消、空标的校验）
 
 ### gRPC 测试 (tests/grpc/)
 - ✅ 健康检查服务测试（Check、Watch）
-- ✅ 数据服务测试（9 个接口）
+- ✅ 数据服务测试（14 个接口）
 - ✅ 交易服务测试（8 个接口）
+- ✅ 行情订阅测试（订阅、取消、复权、空标的、流式推送）
+- ✅ 订阅管理器单元测试（初始化、多订阅、流式数据）
 
 ### 测试特性
 - 🎯 使用 pytest 框架
 - 🔄 支持 mock/dev/prod 三种模式测试
 - 📊 详细的测试报告和日志
+- ✅ gRPC 订阅测试 7 passed, 1 skipped
+- ✅ 订阅管理器测试 3 passed, 1 skipped
 - 🚀 CI/CD 集成就绪
 
 ---
@@ -314,7 +376,9 @@ pytest tests/ -v
 
 ### 已实现功能 ✅
 
-#### 数据模块 (9/50+)
+> **💡 接口覆盖率**: 20/125+ ≈ 16% | **✨ 最新更新**: gRPC 行情订阅完整实现
+
+#### 数据模块 (14/50+)
 - ✅ 市场数据获取（K线、分时、tick）
 - ✅ 财务数据查询
 - ✅ 板块数据管理
@@ -322,6 +386,13 @@ pytest tests/ -v
 - ✅ 交易日历查询
 - ✅ 合约信息查询
 - ✅ ETF 信息查询（占位）
+- ✅ 行情订阅管理（REST API 完整实现）
+- ✅ gRPC 行情订阅（流式推送，支持复权）
+- ✅ WebSocket 行情推送（实时数据，心跳保活）
+- ✅ 订阅队列管理（惰性初始化，防溢出）
+- ✅ 空标的校验（多层验证）
+- ✅ 复权参数透传（前复权/后复权）
+- ✅ 事件循环自动管理（gRPC 线程安全）
 
 #### 交易模块 (6/60+)
 - ✅ 账户连接管理
@@ -329,27 +400,33 @@ pytest tests/ -v
 - ✅ 持仓查询
 - ✅ 订单查询
 - ✅ 交易模式拦截
+- ✅ 资产/风险/策略查询（mock 数据）
 
 #### 系统模块
 - ✅ 配置管理（单例模式）
-- ✅ 日志系统（Loguru）
+- ✅ 日志系统（Loguru，结构化日志）
 - ✅ 健康检查（REST + gRPC）
-- ✅ API 认证
-- ✅ 异常处理
+- ✅ API 认证（API Key）
+- ✅ 异常处理（统一错误码映射）
+- ✅ 行情订阅管理（SubscriptionManager）
+- ✅ WebSocket 推送（心跳保活，限流控制）
+- ✅ 事件循环管理（gRPC 线程安全）
+- ✅ 队列管理（惰性初始化，自动溢出控制）
 
 ### 待实现功能 🚧
 
 #### 高优先级 (P0)
+- 🔄 L2 行情数据接口（Level2 逐笔数据）
 - ❌ 资产查询接口（真实数据）
 - ❌ 成交查询接口（真实数据）
 - ❌ 异步下单/撤单
 - ❌ 交易回调推送（WebSocket）
 
 #### 中优先级 (P1)
-- ❌ Level2 行情数据
-- ❌ 实时行情订阅（WebSocket）
-- ❌ 数据下载管理
+- ❌ 历史数据下载管理
+- ❌ 财务数据下载管理
 - ❌ 新股申购功能
+- ❌ 行情订阅性能优化（批量订阅）
 
 #### 低优先级 (P2)
 - ❌ 信用交易（融资融券）
@@ -357,7 +434,7 @@ pytest tests/ -v
 - ❌ 约券功能
 - ❌ 板块管理
 
-**接口覆盖率**: 15/125+ ≈ 12%
+**当前进度**: 数据模块 14/50+，交易模块 6/60+，系统模块核心功能完成
 
 ---
 
@@ -458,13 +535,18 @@ Get-Content logs/error.log -Wait -Tail 50
 - xtdata 连接有 5 秒超时限制
 - 连接失败会自动降级到模拟模式
 - gRPC 最大消息大小限制为 50MB
+- 订阅队列默认最大长度 1000，超出会丢弃旧数据
+- 单实例最大订阅数默认限制为 100
 
 ### 性能建议
 - ✅ 使用单例模式避免重复初始化
 - ✅ xtdata 连接成功后会复用
 - ✅ gRPC 使用连接池提升性能
-- 📋 考虑添加 Redis 缓存（可选）
-- 📋 考虑添加数据库持久化（可选）
+- ✅ 订阅队列惰性初始化，减少内存占用
+- ✅ 队列满时自动丢弃旧数据，防止内存溢出
+- 📋 考虑添加 Redis 缓存高频查询数据（可选）
+- 📋 考虑添加数据库持久化订阅配置（可选）
+- 📋 批量订阅优化，减少 xtdata 调用次数（规划中）
 
 ---
 
@@ -492,6 +574,19 @@ Get-Content logs/error.log -Wait -Tail 50
 2. 检查端口 50051 是否被占用
 3. 确认客户端使用正确的地址: `localhost:50051`
 4. 检查防火墙设置
+
+### WebSocket 无行情推送
+1. 使用 REST 接口确认订阅状态为 `active`
+2. 检查 WebSocket 是否按需发送 `ping` 保持心跳
+3. mock 模式下推送为模拟数据，若需真实行情请使用 dev/prod 模式
+4. 查看 `logs/app.log` 是否有订阅队列过载或 xtdata 异常
+5. 检查股票代码列表是否为空（已添加多层校验）
+
+### gRPC 订阅报错
+1. 确认使用 mock 模式测试: `$env:APP_MODE="mock"`
+2. 检查是否传入空股票列表（会返回 INVALID_ARGUMENT）
+3. 查看是否有 RuntimeError 关于 asyncio.Queue（已修复）
+4. 检查复权参数是否正确: none/front/back
 
 ### 交易被拦截
 - 这是正常行为！dev 模式会拦截所有交易请求
