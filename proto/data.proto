@@ -163,9 +163,488 @@ message ETFInfoResponse {
   common.Status status = 6;
 }
 
+// ==================== 阶段1: 基础信息接口 ====================
+
+// 合约类型信息
+message InstrumentTypeInfo {
+  string stock_code = 1;
+  bool index = 2;
+  bool stock = 3;
+  bool fund = 4;
+  bool etf = 5;
+  bool bond = 6;
+  bool option = 7;
+  bool futures = 8;
+}
+
+message InstrumentTypeRequest {
+  string stock_code = 1;
+}
+
+message InstrumentTypeResponse {
+  InstrumentTypeInfo data = 1;
+  common.Status status = 2;
+}
+
+// 节假日信息
+message HolidayInfoResponse {
+  repeated string holidays = 1;
+  common.Status status = 2;
+}
+
+// 可转债信息
+message ConvertibleBondInfo {
+  string bond_code = 1;
+  string bond_name = 2;
+  string stock_code = 3;
+  string stock_name = 4;
+  double conversion_price = 5;
+  double conversion_value = 6;
+  double conversion_premium_rate = 7;
+  double current_price = 8;
+  double par_value = 9;
+  string list_date = 10;
+  string maturity_date = 11;
+  string conversion_begin_date = 12;
+  string conversion_end_date = 13;
+  map<string, string> raw_data = 14;
+}
+
+message ConvertibleBondListResponse {
+  repeated ConvertibleBondInfo bonds = 1;
+  common.Status status = 2;
+}
+
+// 新股申购信息
+message IpoInfo {
+  string security_code = 1;
+  string code_name = 2;
+  string market = 3;
+  int64 act_issue_qty = 4;
+  int64 online_issue_qty = 5;
+  string online_sub_code = 6;
+  int64 online_sub_max_qty = 7;
+  double publish_price = 8;
+  int32 is_profit = 9;
+  double industry_pe = 10;
+  double after_pe = 11;
+  string subscribe_date = 12;
+  string lottery_date = 13;
+  string list_date = 14;
+  map<string, string> raw_data = 15;
+}
+
+message IpoInfoListResponse {
+  repeated IpoInfo ipos = 1;
+  common.Status status = 2;
+}
+
+// 可用周期列表
+message PeriodListResponse {
+  repeated string periods = 1;
+  common.Status status = 2;
+}
+
+// 数据目录
+message DataDirResponse {
+  string data_dir = 1;
+  common.Status status = 2;
+}
+
+// ==================== 阶段2: 行情数据获取接口 ====================
+
+// 本地数据请求
+message LocalDataRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+  string period = 4;
+}
+
+message LocalDataResponse {
+  map<string, KlineDataList> data = 1;  // stock_code -> kline list
+  common.Status status = 2;
+}
+
+message KlineDataList {
+  repeated KlineBar bars = 1;
+}
+
+// Tick数据
+message TickData {
+  string time = 1;
+  double last_price = 2;
+  double open = 3;
+  double high = 4;
+  double low = 5;
+  double last_close = 6;
+  double amount = 7;
+  int64 volume = 8;
+  int64 pvolume = 9;
+  int32 stock_status = 10;
+  int32 open_int = 11;
+  double last_settlement_price = 12;
+  repeated double ask_price = 13;
+  repeated double bid_price = 14;
+  repeated int32 ask_vol = 15;
+  repeated int32 bid_vol = 16;
+  int32 transaction_num = 17;
+}
+
+message FullTickRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+message FullTickResponse {
+  map<string, TickDataList> data = 1;
+  common.Status status = 2;
+}
+
+message TickDataList {
+  repeated TickData ticks = 1;
+}
+
+// 除权数据
+message DividendFactor {
+  string time = 1;
+  double interest = 2;
+  double stock_bonus = 3;
+  double stock_gift = 4;
+  double allot_num = 5;
+  double allot_price = 6;
+  int32 gugai = 7;
+  double dr = 8;
+}
+
+message DividFactorsRequest {
+  string stock_code = 1;
+}
+
+message DividFactorsResponse {
+  repeated DividendFactor factors = 1;
+  common.Status status = 2;
+}
+
+// 完整K线数据请求
+message FullKlineRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+  string period = 4;
+}
+
+message FullKlineResponse {
+  map<string, KlineDataList> data = 1;
+  common.Status status = 2;
+}
+
+// ==================== 阶段3: 数据下载接口 ====================
+
+// 下载任务状态
+enum DownloadTaskStatus {
+  DOWNLOAD_PENDING = 0;
+  DOWNLOAD_RUNNING = 1;
+  DOWNLOAD_COMPLETED = 2;
+  DOWNLOAD_FAILED = 3;
+}
+
+// 下载历史数据请求
+message DownloadHistoryDataRequest {
+  string stock_code = 1;
+  string period = 2;
+  string start_time = 3;
+  string end_time = 4;
+  bool incrementally = 5;
+}
+
+// 批量下载请求
+message DownloadHistoryDataBatchRequest {
+  repeated string stock_list = 1;
+  string period = 2;
+  string start_time = 3;
+  string end_time = 4;
+}
+
+// 下载响应
+message DownloadResponse {
+  string task_id = 1;
+  DownloadTaskStatus status = 2;
+  double progress = 3;
+  int32 total = 4;
+  int32 finished = 5;
+  string message = 6;
+  string current_stock = 7;
+  common.Status rpc_status = 8;
+}
+
+// 下载财务数据请求
+message DownloadFinancialDataRequest {
+  repeated string stock_list = 1;
+  repeated string table_list = 2;
+  string start_date = 3;
+  string end_date = 4;
+}
+
+// 下载指数权重请求
+message DownloadIndexWeightRequest {
+  string index_code = 1;
+}
+
+// 下载历史合约请求
+message DownloadHistoryContractsRequest {
+  string market = 1;
+}
+
+// ==================== 阶段4: 板块管理接口 ====================
+
+// 创建板块文件夹请求
+message CreateSectorFolderRequest {
+  string parent_node = 1;
+  string folder_name = 2;
+  bool overwrite = 3;
+}
+
+message CreateSectorFolderResponse {
+  string created_name = 1;
+  common.Status status = 2;
+}
+
+// 创建板块请求
+message CreateSectorRequest {
+  string parent_node = 1;
+  string sector_name = 2;
+  bool overwrite = 3;
+}
+
+message CreateSectorResponse {
+  string created_name = 1;
+  common.Status status = 2;
+}
+
+// 添加板块请求
+message AddSectorRequest {
+  string sector_name = 1;
+  repeated string stock_list = 2;
+}
+
+message AddSectorResponse {
+  common.Status status = 1;
+}
+
+// 移除板块成分股请求
+message RemoveStockFromSectorRequest {
+  string sector_name = 1;
+  repeated string stock_list = 2;
+}
+
+message RemoveStockFromSectorResponse {
+  bool success = 1;
+  common.Status status = 2;
+}
+
+// 移除板块请求
+message RemoveSectorRequest {
+  string sector_name = 1;
+}
+
+message RemoveSectorResponse {
+  common.Status status = 1;
+}
+
+// 重置板块请求
+message ResetSectorRequest {
+  string sector_name = 1;
+  repeated string stock_list = 2;
+}
+
+message ResetSectorResponse {
+  bool success = 1;
+  common.Status status = 2;
+}
+
+// ==================== 阶段5: Level2数据接口 ====================
+
+// Level2快照数据
+message L2QuoteData {
+  string time = 1;
+  double last_price = 2;
+  double open = 3;
+  double high = 4;
+  double low = 5;
+  double amount = 6;
+  int64 volume = 7;
+  int64 pvolume = 8;
+  int32 open_int = 9;
+  int32 stock_status = 10;
+  int32 transaction_num = 11;
+  double last_close = 12;
+  double last_settlement_price = 13;
+  double settlement_price = 14;
+  double pe = 15;
+  repeated double ask_price = 16;  // 10档
+  repeated double bid_price = 17;  // 10档
+  repeated int32 ask_vol = 18;
+  repeated int32 bid_vol = 19;
+}
+
+message L2QuoteRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+message L2QuoteResponse {
+  map<string, L2QuoteDataList> data = 1;
+  common.Status status = 2;
+}
+
+message L2QuoteDataList {
+  repeated L2QuoteData quotes = 1;
+}
+
+// Level2逐笔委托
+message L2OrderData {
+  string time = 1;
+  double price = 2;
+  int32 volume = 3;
+  int64 entrust_no = 4;
+  int32 entrust_type = 5;
+  int32 entrust_direction = 6;
+}
+
+message L2OrderRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+message L2OrderResponse {
+  map<string, L2OrderDataList> data = 1;
+  common.Status status = 2;
+}
+
+message L2OrderDataList {
+  repeated L2OrderData orders = 1;
+}
+
+// Level2逐笔成交
+message L2TransactionData {
+  string time = 1;
+  double price = 2;
+  int32 volume = 3;
+  double amount = 4;
+  int64 trade_index = 5;
+  int64 buy_no = 6;
+  int64 sell_no = 7;
+  int32 trade_type = 8;
+  int32 trade_flag = 9;
+}
+
+message L2TransactionRequest {
+  repeated string stock_codes = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+message L2TransactionResponse {
+  map<string, L2TransactionDataList> data = 1;
+  common.Status status = 2;
+}
+
+message L2TransactionDataList {
+  repeated L2TransactionData transactions = 1;
+}
+
+// ==================== 阶段6: 行情订阅接口 ====================
+
+// 订阅类型枚举
+enum SubscriptionType {
+  SUBSCRIPTION_QUOTE = 0;        // 单股订阅
+  SUBSCRIPTION_WHOLE_QUOTE = 1;  // 全推订阅
+}
+
+// 订阅请求
+message SubscriptionRequest {
+  repeated string symbols = 1;           // 股票代码列表
+  string adjust_type = 2;                // 复权类型: none, front, back
+  SubscriptionType subscription_type = 3; // 订阅类型
+}
+
+// 全推订阅请求
+message WholeQuoteRequest {
+  repeated string markets = 1;  // 市场列表 ["SH", "SZ"]
+}
+
+// 订阅响应
+message SubscriptionResponse {
+  string subscription_id = 1;    // 订阅ID
+  string status = 2;              // 订阅状态
+  string created_at = 3;          // 创建时间
+  repeated string symbols = 4;    // 订阅的股票代码
+  string subscription_type = 5;   // 订阅类型
+  common.Status rpc_status = 6;   // RPC状态
+}
+
+// 取消订阅请求
+message UnsubscribeRequest {
+  string subscription_id = 1;  // 订阅ID
+}
+
+// 取消订阅响应
+message UnsubscribeResponse {
+  bool success = 1;
+  string message = 2;
+  common.Status status = 3;
+}
+
+// 实时行情更新
+message QuoteUpdate {
+  string stock_code = 1;        // 股票代码
+  string timestamp = 2;         // 时间戳
+  double last_price = 3;        // 最新价
+  double open = 4;              // 开盘价
+  double high = 5;              // 最高价
+  double low = 6;               // 最低价
+  double close = 7;             // 收盘价
+  int64 volume = 8;             // 成交量
+  double amount = 9;            // 成交额
+  double pre_close = 10;        // 前收盘价
+  repeated double bid_price = 11;  // 委买价（5档）
+  repeated double ask_price = 12;  // 委卖价（5档）
+  repeated int32 bid_vol = 13;     // 委买量（5档）
+  repeated int32 ask_vol = 14;     // 委卖量（5档）
+}
+
+// 订阅信息请求
+message SubscriptionInfoRequest {
+  string subscription_id = 1;
+}
+
+// 订阅信息响应
+message SubscriptionInfoResponse {
+  string subscription_id = 1;
+  repeated string symbols = 2;
+  string adjust_type = 3;
+  string subscription_type = 4;
+  string created_at = 5;
+  string last_heartbeat = 6;
+  bool active = 7;
+  int32 queue_size = 8;
+  common.Status status = 9;
+}
+
+// 订阅列表响应
+message SubscriptionListResponse {
+  repeated SubscriptionInfoResponse subscriptions = 1;
+  common.Status status = 2;
+}
+
 // ==================== 数据服务定义 ====================
 
 service DataService {
+  // ===== 原有接口 =====
   // 获取市场数据（一元调用）
   rpc GetMarketData(MarketDataRequest) returns (MarketDataBatchResponse);
   
@@ -186,4 +665,112 @@ service DataService {
   
   // 获取ETF信息（一元调用）
   rpc GetETFInfo(ETFInfoRequest) returns (ETFInfoResponse);
+  
+  // ===== 阶段1: 基础信息接口 =====
+  // 获取合约类型
+  rpc GetInstrumentType(InstrumentTypeRequest) returns (InstrumentTypeResponse);
+  
+  // 获取节假日列表
+  rpc GetHolidays(google.protobuf.Empty) returns (HolidayInfoResponse);
+  
+  // 获取可转债信息
+  rpc GetConvertibleBondInfo(google.protobuf.Empty) returns (ConvertibleBondListResponse);
+  
+  // 获取新股申购信息
+  rpc GetIpoInfo(google.protobuf.Empty) returns (IpoInfoListResponse);
+  
+  // 获取可用周期列表
+  rpc GetPeriodList(google.protobuf.Empty) returns (PeriodListResponse);
+  
+  // 获取本地数据路径
+  rpc GetDataDir(google.protobuf.Empty) returns (DataDirResponse);
+  
+  // ===== 阶段2: 行情数据获取接口 =====
+  // 获取本地行情数据
+  rpc GetLocalData(LocalDataRequest) returns (LocalDataResponse);
+  
+  // 获取完整tick数据
+  rpc GetFullTick(FullTickRequest) returns (FullTickResponse);
+  
+  // 获取除权数据
+  rpc GetDividFactors(DividFactorsRequest) returns (DividFactorsResponse);
+  
+  // 获取完整K线数据
+  rpc GetFullKline(FullKlineRequest) returns (FullKlineResponse);
+  
+  // ===== 阶段3: 数据下载接口 =====
+  // 下载历史数据（单只）
+  rpc DownloadHistoryData(DownloadHistoryDataRequest) returns (DownloadResponse);
+  
+  // 批量下载历史数据
+  rpc DownloadHistoryDataBatch(DownloadHistoryDataBatchRequest) returns (DownloadResponse);
+  
+  // 下载财务数据
+  rpc DownloadFinancialData(DownloadFinancialDataRequest) returns (DownloadResponse);
+  
+  // 批量下载财务数据
+  rpc DownloadFinancialDataBatch(DownloadFinancialDataRequest) returns (DownloadResponse);
+  
+  // 下载板块数据
+  rpc DownloadSectorData(google.protobuf.Empty) returns (DownloadResponse);
+  
+  // 下载指数权重
+  rpc DownloadIndexWeight(DownloadIndexWeightRequest) returns (DownloadResponse);
+  
+  // 下载可转债数据
+  rpc DownloadCBData(google.protobuf.Empty) returns (DownloadResponse);
+  
+  // 下载ETF信息
+  rpc DownloadETFInfo(google.protobuf.Empty) returns (DownloadResponse);
+  
+  // 下载节假日数据
+  rpc DownloadHolidayData(google.protobuf.Empty) returns (DownloadResponse);
+  
+  // 下载历史合约数据
+  rpc DownloadHistoryContracts(DownloadHistoryContractsRequest) returns (DownloadResponse);
+  
+  // ===== 阶段4: 板块管理接口 =====
+  // 创建板块文件夹
+  rpc CreateSectorFolder(CreateSectorFolderRequest) returns (CreateSectorFolderResponse);
+  
+  // 创建板块
+  rpc CreateSector(CreateSectorRequest) returns (CreateSectorResponse);
+  
+  // 添加股票到板块
+  rpc AddSector(AddSectorRequest) returns (AddSectorResponse);
+  
+  // 从板块移除股票
+  rpc RemoveStockFromSector(RemoveStockFromSectorRequest) returns (RemoveStockFromSectorResponse);
+  
+  // 删除板块
+  rpc RemoveSector(RemoveSectorRequest) returns (RemoveSectorResponse);
+  
+  // 重置板块
+  rpc ResetSector(ResetSectorRequest) returns (ResetSectorResponse);
+  
+  // ===== 阶段5: Level2数据接口 =====
+  // 获取Level2快照数据
+  rpc GetL2Quote(L2QuoteRequest) returns (L2QuoteResponse);
+  
+  // 获取Level2逐笔委托
+  rpc GetL2Order(L2OrderRequest) returns (L2OrderResponse);
+  
+  // 获取Level2逐笔成交
+  rpc GetL2Transaction(L2TransactionRequest) returns (L2TransactionResponse);
+  
+  // ===== 阶段6: 行情订阅接口 =====
+  // 订阅行情（Server Streaming）
+  rpc SubscribeQuote(SubscriptionRequest) returns (stream QuoteUpdate);
+  
+  // 订阅全推行情（Server Streaming）
+  rpc SubscribeWholeQuote(WholeQuoteRequest) returns (stream QuoteUpdate);
+  
+  // 取消订阅
+  rpc UnsubscribeQuote(UnsubscribeRequest) returns (UnsubscribeResponse);
+  
+  // 获取订阅信息
+  rpc GetSubscriptionInfo(SubscriptionInfoRequest) returns (SubscriptionInfoResponse);
+  
+  // 列出所有订阅
+  rpc ListSubscriptions(google.protobuf.Empty) returns (SubscriptionListResponse);
 }

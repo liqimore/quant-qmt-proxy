@@ -9,8 +9,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.config import get_settings
-from app.utils.helpers import setup_logging
 from app.utils.logger import (
+    configure_logging,
+    logger,
     get_logger,
     log_api_request,
     log_api_response,
@@ -110,17 +111,14 @@ def main():
     print(f"  控制台输出: {settings.logging.console_output}")
     
     # 初始化日志系统
-    setup_logging(
+    configure_logging(
         log_level=settings.logging.level,
-        log_file=settings.logging.file,
-        error_file=settings.logging.error_file,
+        log_file=settings.logging.file or "logs/app.log",
+        error_log_file=settings.logging.error_file or "logs/error.log",
         log_format=settings.logging.format,
         rotation=settings.logging.rotation,
         retention=settings.logging.retention,
-        compression=settings.logging.compression,
-        console_output=settings.logging.console_output,
-        backtrace=settings.logging.backtrace,
-        diagnose=settings.logging.diagnose
+        compression=settings.logging.compression
     )
     
     # 运行测试

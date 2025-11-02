@@ -43,6 +43,11 @@ class XTQuantDataConfig(BaseModel):
     path: str = "./data"
     config_path: str = "./xtquant/config"
     qmt_userdata_path: Optional[str] = None  # QMT客户端的userdata_mini路径
+    # 行情订阅配置
+    max_queue_size: int = 1000  # 每个订阅队列最大长度
+    max_subscriptions: int = 100  # 单实例最大订阅数
+    heartbeat_timeout: int = 60  # WebSocket心跳超时（秒）
+    whole_quote_enabled: bool = False  # 是否允许全推订阅
 
 
 class XTQuantTradingConfig(BaseModel):

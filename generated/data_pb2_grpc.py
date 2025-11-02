@@ -72,6 +72,176 @@ class DataServiceStub(object):
                 request_serializer=data__pb2.ETFInfoRequest.SerializeToString,
                 response_deserializer=data__pb2.ETFInfoResponse.FromString,
                 _registered_method=True)
+        self.GetInstrumentType = channel.unary_unary(
+                '/qmt.data.DataService/GetInstrumentType',
+                request_serializer=data__pb2.InstrumentTypeRequest.SerializeToString,
+                response_deserializer=data__pb2.InstrumentTypeResponse.FromString,
+                _registered_method=True)
+        self.GetHolidays = channel.unary_unary(
+                '/qmt.data.DataService/GetHolidays',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.HolidayInfoResponse.FromString,
+                _registered_method=True)
+        self.GetConvertibleBondInfo = channel.unary_unary(
+                '/qmt.data.DataService/GetConvertibleBondInfo',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.ConvertibleBondListResponse.FromString,
+                _registered_method=True)
+        self.GetIpoInfo = channel.unary_unary(
+                '/qmt.data.DataService/GetIpoInfo',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.IpoInfoListResponse.FromString,
+                _registered_method=True)
+        self.GetPeriodList = channel.unary_unary(
+                '/qmt.data.DataService/GetPeriodList',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.PeriodListResponse.FromString,
+                _registered_method=True)
+        self.GetDataDir = channel.unary_unary(
+                '/qmt.data.DataService/GetDataDir',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.DataDirResponse.FromString,
+                _registered_method=True)
+        self.GetLocalData = channel.unary_unary(
+                '/qmt.data.DataService/GetLocalData',
+                request_serializer=data__pb2.LocalDataRequest.SerializeToString,
+                response_deserializer=data__pb2.LocalDataResponse.FromString,
+                _registered_method=True)
+        self.GetFullTick = channel.unary_unary(
+                '/qmt.data.DataService/GetFullTick',
+                request_serializer=data__pb2.FullTickRequest.SerializeToString,
+                response_deserializer=data__pb2.FullTickResponse.FromString,
+                _registered_method=True)
+        self.GetDividFactors = channel.unary_unary(
+                '/qmt.data.DataService/GetDividFactors',
+                request_serializer=data__pb2.DividFactorsRequest.SerializeToString,
+                response_deserializer=data__pb2.DividFactorsResponse.FromString,
+                _registered_method=True)
+        self.GetFullKline = channel.unary_unary(
+                '/qmt.data.DataService/GetFullKline',
+                request_serializer=data__pb2.FullKlineRequest.SerializeToString,
+                response_deserializer=data__pb2.FullKlineResponse.FromString,
+                _registered_method=True)
+        self.DownloadHistoryData = channel.unary_unary(
+                '/qmt.data.DataService/DownloadHistoryData',
+                request_serializer=data__pb2.DownloadHistoryDataRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadHistoryDataBatch = channel.unary_unary(
+                '/qmt.data.DataService/DownloadHistoryDataBatch',
+                request_serializer=data__pb2.DownloadHistoryDataBatchRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadFinancialData = channel.unary_unary(
+                '/qmt.data.DataService/DownloadFinancialData',
+                request_serializer=data__pb2.DownloadFinancialDataRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadFinancialDataBatch = channel.unary_unary(
+                '/qmt.data.DataService/DownloadFinancialDataBatch',
+                request_serializer=data__pb2.DownloadFinancialDataRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadSectorData = channel.unary_unary(
+                '/qmt.data.DataService/DownloadSectorData',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadIndexWeight = channel.unary_unary(
+                '/qmt.data.DataService/DownloadIndexWeight',
+                request_serializer=data__pb2.DownloadIndexWeightRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadCBData = channel.unary_unary(
+                '/qmt.data.DataService/DownloadCBData',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadETFInfo = channel.unary_unary(
+                '/qmt.data.DataService/DownloadETFInfo',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadHolidayData = channel.unary_unary(
+                '/qmt.data.DataService/DownloadHolidayData',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.DownloadHistoryContracts = channel.unary_unary(
+                '/qmt.data.DataService/DownloadHistoryContracts',
+                request_serializer=data__pb2.DownloadHistoryContractsRequest.SerializeToString,
+                response_deserializer=data__pb2.DownloadResponse.FromString,
+                _registered_method=True)
+        self.CreateSectorFolder = channel.unary_unary(
+                '/qmt.data.DataService/CreateSectorFolder',
+                request_serializer=data__pb2.CreateSectorFolderRequest.SerializeToString,
+                response_deserializer=data__pb2.CreateSectorFolderResponse.FromString,
+                _registered_method=True)
+        self.CreateSector = channel.unary_unary(
+                '/qmt.data.DataService/CreateSector',
+                request_serializer=data__pb2.CreateSectorRequest.SerializeToString,
+                response_deserializer=data__pb2.CreateSectorResponse.FromString,
+                _registered_method=True)
+        self.AddSector = channel.unary_unary(
+                '/qmt.data.DataService/AddSector',
+                request_serializer=data__pb2.AddSectorRequest.SerializeToString,
+                response_deserializer=data__pb2.AddSectorResponse.FromString,
+                _registered_method=True)
+        self.RemoveStockFromSector = channel.unary_unary(
+                '/qmt.data.DataService/RemoveStockFromSector',
+                request_serializer=data__pb2.RemoveStockFromSectorRequest.SerializeToString,
+                response_deserializer=data__pb2.RemoveStockFromSectorResponse.FromString,
+                _registered_method=True)
+        self.RemoveSector = channel.unary_unary(
+                '/qmt.data.DataService/RemoveSector',
+                request_serializer=data__pb2.RemoveSectorRequest.SerializeToString,
+                response_deserializer=data__pb2.RemoveSectorResponse.FromString,
+                _registered_method=True)
+        self.ResetSector = channel.unary_unary(
+                '/qmt.data.DataService/ResetSector',
+                request_serializer=data__pb2.ResetSectorRequest.SerializeToString,
+                response_deserializer=data__pb2.ResetSectorResponse.FromString,
+                _registered_method=True)
+        self.GetL2Quote = channel.unary_unary(
+                '/qmt.data.DataService/GetL2Quote',
+                request_serializer=data__pb2.L2QuoteRequest.SerializeToString,
+                response_deserializer=data__pb2.L2QuoteResponse.FromString,
+                _registered_method=True)
+        self.GetL2Order = channel.unary_unary(
+                '/qmt.data.DataService/GetL2Order',
+                request_serializer=data__pb2.L2OrderRequest.SerializeToString,
+                response_deserializer=data__pb2.L2OrderResponse.FromString,
+                _registered_method=True)
+        self.GetL2Transaction = channel.unary_unary(
+                '/qmt.data.DataService/GetL2Transaction',
+                request_serializer=data__pb2.L2TransactionRequest.SerializeToString,
+                response_deserializer=data__pb2.L2TransactionResponse.FromString,
+                _registered_method=True)
+        self.SubscribeQuote = channel.unary_stream(
+                '/qmt.data.DataService/SubscribeQuote',
+                request_serializer=data__pb2.SubscriptionRequest.SerializeToString,
+                response_deserializer=data__pb2.QuoteUpdate.FromString,
+                _registered_method=True)
+        self.SubscribeWholeQuote = channel.unary_stream(
+                '/qmt.data.DataService/SubscribeWholeQuote',
+                request_serializer=data__pb2.WholeQuoteRequest.SerializeToString,
+                response_deserializer=data__pb2.QuoteUpdate.FromString,
+                _registered_method=True)
+        self.UnsubscribeQuote = channel.unary_unary(
+                '/qmt.data.DataService/UnsubscribeQuote',
+                request_serializer=data__pb2.UnsubscribeRequest.SerializeToString,
+                response_deserializer=data__pb2.UnsubscribeResponse.FromString,
+                _registered_method=True)
+        self.GetSubscriptionInfo = channel.unary_unary(
+                '/qmt.data.DataService/GetSubscriptionInfo',
+                request_serializer=data__pb2.SubscriptionInfoRequest.SerializeToString,
+                response_deserializer=data__pb2.SubscriptionInfoResponse.FromString,
+                _registered_method=True)
+        self.ListSubscriptions = channel.unary_unary(
+                '/qmt.data.DataService/ListSubscriptions',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=data__pb2.SubscriptionListResponse.FromString,
+                _registered_method=True)
 
 
 class DataServiceServicer(object):
@@ -80,7 +250,8 @@ class DataServiceServicer(object):
     """
 
     def GetMarketData(self, request, context):
-        """获取市场数据（一元调用）
+        """===== 原有接口 =====
+        获取市场数据（一元调用）
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -128,6 +299,250 @@ class DataServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetInstrumentType(self, request, context):
+        """===== 阶段1: 基础信息接口 =====
+        获取合约类型
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetHolidays(self, request, context):
+        """获取节假日列表
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetConvertibleBondInfo(self, request, context):
+        """获取可转债信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetIpoInfo(self, request, context):
+        """获取新股申购信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetPeriodList(self, request, context):
+        """获取可用周期列表
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetDataDir(self, request, context):
+        """获取本地数据路径
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetLocalData(self, request, context):
+        """===== 阶段2: 行情数据获取接口 =====
+        获取本地行情数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFullTick(self, request, context):
+        """获取完整tick数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetDividFactors(self, request, context):
+        """获取除权数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFullKline(self, request, context):
+        """获取完整K线数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadHistoryData(self, request, context):
+        """===== 阶段3: 数据下载接口 =====
+        下载历史数据（单只）
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadHistoryDataBatch(self, request, context):
+        """批量下载历史数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadFinancialData(self, request, context):
+        """下载财务数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadFinancialDataBatch(self, request, context):
+        """批量下载财务数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadSectorData(self, request, context):
+        """下载板块数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadIndexWeight(self, request, context):
+        """下载指数权重
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadCBData(self, request, context):
+        """下载可转债数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadETFInfo(self, request, context):
+        """下载ETF信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadHolidayData(self, request, context):
+        """下载节假日数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadHistoryContracts(self, request, context):
+        """下载历史合约数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateSectorFolder(self, request, context):
+        """===== 阶段4: 板块管理接口 =====
+        创建板块文件夹
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateSector(self, request, context):
+        """创建板块
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddSector(self, request, context):
+        """添加股票到板块
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RemoveStockFromSector(self, request, context):
+        """从板块移除股票
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RemoveSector(self, request, context):
+        """删除板块
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ResetSector(self, request, context):
+        """重置板块
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetL2Quote(self, request, context):
+        """===== 阶段5: Level2数据接口 =====
+        获取Level2快照数据
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetL2Order(self, request, context):
+        """获取Level2逐笔委托
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetL2Transaction(self, request, context):
+        """获取Level2逐笔成交
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeQuote(self, request, context):
+        """===== 阶段6: 行情订阅接口 =====
+        订阅行情（Server Streaming）
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeWholeQuote(self, request, context):
+        """订阅全推行情（Server Streaming）
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UnsubscribeQuote(self, request, context):
+        """取消订阅
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSubscriptionInfo(self, request, context):
+        """获取订阅信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListSubscriptions(self, request, context):
+        """列出所有订阅
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DataServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -165,6 +580,176 @@ def add_DataServiceServicer_to_server(servicer, server):
                     servicer.GetETFInfo,
                     request_deserializer=data__pb2.ETFInfoRequest.FromString,
                     response_serializer=data__pb2.ETFInfoResponse.SerializeToString,
+            ),
+            'GetInstrumentType': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetInstrumentType,
+                    request_deserializer=data__pb2.InstrumentTypeRequest.FromString,
+                    response_serializer=data__pb2.InstrumentTypeResponse.SerializeToString,
+            ),
+            'GetHolidays': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetHolidays,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.HolidayInfoResponse.SerializeToString,
+            ),
+            'GetConvertibleBondInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetConvertibleBondInfo,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.ConvertibleBondListResponse.SerializeToString,
+            ),
+            'GetIpoInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetIpoInfo,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.IpoInfoListResponse.SerializeToString,
+            ),
+            'GetPeriodList': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPeriodList,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.PeriodListResponse.SerializeToString,
+            ),
+            'GetDataDir': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDataDir,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.DataDirResponse.SerializeToString,
+            ),
+            'GetLocalData': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetLocalData,
+                    request_deserializer=data__pb2.LocalDataRequest.FromString,
+                    response_serializer=data__pb2.LocalDataResponse.SerializeToString,
+            ),
+            'GetFullTick': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFullTick,
+                    request_deserializer=data__pb2.FullTickRequest.FromString,
+                    response_serializer=data__pb2.FullTickResponse.SerializeToString,
+            ),
+            'GetDividFactors': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDividFactors,
+                    request_deserializer=data__pb2.DividFactorsRequest.FromString,
+                    response_serializer=data__pb2.DividFactorsResponse.SerializeToString,
+            ),
+            'GetFullKline': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFullKline,
+                    request_deserializer=data__pb2.FullKlineRequest.FromString,
+                    response_serializer=data__pb2.FullKlineResponse.SerializeToString,
+            ),
+            'DownloadHistoryData': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadHistoryData,
+                    request_deserializer=data__pb2.DownloadHistoryDataRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadHistoryDataBatch': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadHistoryDataBatch,
+                    request_deserializer=data__pb2.DownloadHistoryDataBatchRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadFinancialData': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadFinancialData,
+                    request_deserializer=data__pb2.DownloadFinancialDataRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadFinancialDataBatch': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadFinancialDataBatch,
+                    request_deserializer=data__pb2.DownloadFinancialDataRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadSectorData': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadSectorData,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadIndexWeight': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadIndexWeight,
+                    request_deserializer=data__pb2.DownloadIndexWeightRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadCBData': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadCBData,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadETFInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadETFInfo,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadHolidayData': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadHolidayData,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'DownloadHistoryContracts': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadHistoryContracts,
+                    request_deserializer=data__pb2.DownloadHistoryContractsRequest.FromString,
+                    response_serializer=data__pb2.DownloadResponse.SerializeToString,
+            ),
+            'CreateSectorFolder': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateSectorFolder,
+                    request_deserializer=data__pb2.CreateSectorFolderRequest.FromString,
+                    response_serializer=data__pb2.CreateSectorFolderResponse.SerializeToString,
+            ),
+            'CreateSector': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateSector,
+                    request_deserializer=data__pb2.CreateSectorRequest.FromString,
+                    response_serializer=data__pb2.CreateSectorResponse.SerializeToString,
+            ),
+            'AddSector': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddSector,
+                    request_deserializer=data__pb2.AddSectorRequest.FromString,
+                    response_serializer=data__pb2.AddSectorResponse.SerializeToString,
+            ),
+            'RemoveStockFromSector': grpc.unary_unary_rpc_method_handler(
+                    servicer.RemoveStockFromSector,
+                    request_deserializer=data__pb2.RemoveStockFromSectorRequest.FromString,
+                    response_serializer=data__pb2.RemoveStockFromSectorResponse.SerializeToString,
+            ),
+            'RemoveSector': grpc.unary_unary_rpc_method_handler(
+                    servicer.RemoveSector,
+                    request_deserializer=data__pb2.RemoveSectorRequest.FromString,
+                    response_serializer=data__pb2.RemoveSectorResponse.SerializeToString,
+            ),
+            'ResetSector': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResetSector,
+                    request_deserializer=data__pb2.ResetSectorRequest.FromString,
+                    response_serializer=data__pb2.ResetSectorResponse.SerializeToString,
+            ),
+            'GetL2Quote': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetL2Quote,
+                    request_deserializer=data__pb2.L2QuoteRequest.FromString,
+                    response_serializer=data__pb2.L2QuoteResponse.SerializeToString,
+            ),
+            'GetL2Order': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetL2Order,
+                    request_deserializer=data__pb2.L2OrderRequest.FromString,
+                    response_serializer=data__pb2.L2OrderResponse.SerializeToString,
+            ),
+            'GetL2Transaction': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetL2Transaction,
+                    request_deserializer=data__pb2.L2TransactionRequest.FromString,
+                    response_serializer=data__pb2.L2TransactionResponse.SerializeToString,
+            ),
+            'SubscribeQuote': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeQuote,
+                    request_deserializer=data__pb2.SubscriptionRequest.FromString,
+                    response_serializer=data__pb2.QuoteUpdate.SerializeToString,
+            ),
+            'SubscribeWholeQuote': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeWholeQuote,
+                    request_deserializer=data__pb2.WholeQuoteRequest.FromString,
+                    response_serializer=data__pb2.QuoteUpdate.SerializeToString,
+            ),
+            'UnsubscribeQuote': grpc.unary_unary_rpc_method_handler(
+                    servicer.UnsubscribeQuote,
+                    request_deserializer=data__pb2.UnsubscribeRequest.FromString,
+                    response_serializer=data__pb2.UnsubscribeResponse.SerializeToString,
+            ),
+            'GetSubscriptionInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSubscriptionInfo,
+                    request_deserializer=data__pb2.SubscriptionInfoRequest.FromString,
+                    response_serializer=data__pb2.SubscriptionInfoResponse.SerializeToString,
+            ),
+            'ListSubscriptions': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSubscriptions,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=data__pb2.SubscriptionListResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -358,6 +943,924 @@ class DataService(object):
             '/qmt.data.DataService/GetETFInfo',
             data__pb2.ETFInfoRequest.SerializeToString,
             data__pb2.ETFInfoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetInstrumentType(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetInstrumentType',
+            data__pb2.InstrumentTypeRequest.SerializeToString,
+            data__pb2.InstrumentTypeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetHolidays(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetHolidays',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.HolidayInfoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetConvertibleBondInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetConvertibleBondInfo',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.ConvertibleBondListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetIpoInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetIpoInfo',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.IpoInfoListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetPeriodList(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetPeriodList',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.PeriodListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDataDir(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetDataDir',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.DataDirResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetLocalData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetLocalData',
+            data__pb2.LocalDataRequest.SerializeToString,
+            data__pb2.LocalDataResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFullTick(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetFullTick',
+            data__pb2.FullTickRequest.SerializeToString,
+            data__pb2.FullTickResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDividFactors(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetDividFactors',
+            data__pb2.DividFactorsRequest.SerializeToString,
+            data__pb2.DividFactorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFullKline(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetFullKline',
+            data__pb2.FullKlineRequest.SerializeToString,
+            data__pb2.FullKlineResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadHistoryData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadHistoryData',
+            data__pb2.DownloadHistoryDataRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadHistoryDataBatch(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadHistoryDataBatch',
+            data__pb2.DownloadHistoryDataBatchRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadFinancialData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadFinancialData',
+            data__pb2.DownloadFinancialDataRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadFinancialDataBatch(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadFinancialDataBatch',
+            data__pb2.DownloadFinancialDataRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadSectorData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadSectorData',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadIndexWeight(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadIndexWeight',
+            data__pb2.DownloadIndexWeightRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadCBData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadCBData',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadETFInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadETFInfo',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadHolidayData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadHolidayData',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DownloadHistoryContracts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/DownloadHistoryContracts',
+            data__pb2.DownloadHistoryContractsRequest.SerializeToString,
+            data__pb2.DownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateSectorFolder(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/CreateSectorFolder',
+            data__pb2.CreateSectorFolderRequest.SerializeToString,
+            data__pb2.CreateSectorFolderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateSector(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/CreateSector',
+            data__pb2.CreateSectorRequest.SerializeToString,
+            data__pb2.CreateSectorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddSector(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/AddSector',
+            data__pb2.AddSectorRequest.SerializeToString,
+            data__pb2.AddSectorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RemoveStockFromSector(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/RemoveStockFromSector',
+            data__pb2.RemoveStockFromSectorRequest.SerializeToString,
+            data__pb2.RemoveStockFromSectorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RemoveSector(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/RemoveSector',
+            data__pb2.RemoveSectorRequest.SerializeToString,
+            data__pb2.RemoveSectorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ResetSector(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/ResetSector',
+            data__pb2.ResetSectorRequest.SerializeToString,
+            data__pb2.ResetSectorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetL2Quote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetL2Quote',
+            data__pb2.L2QuoteRequest.SerializeToString,
+            data__pb2.L2QuoteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetL2Order(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetL2Order',
+            data__pb2.L2OrderRequest.SerializeToString,
+            data__pb2.L2OrderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetL2Transaction(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetL2Transaction',
+            data__pb2.L2TransactionRequest.SerializeToString,
+            data__pb2.L2TransactionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/qmt.data.DataService/SubscribeQuote',
+            data__pb2.SubscriptionRequest.SerializeToString,
+            data__pb2.QuoteUpdate.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeWholeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/qmt.data.DataService/SubscribeWholeQuote',
+            data__pb2.WholeQuoteRequest.SerializeToString,
+            data__pb2.QuoteUpdate.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UnsubscribeQuote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/UnsubscribeQuote',
+            data__pb2.UnsubscribeRequest.SerializeToString,
+            data__pb2.UnsubscribeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSubscriptionInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/GetSubscriptionInfo',
+            data__pb2.SubscriptionInfoRequest.SerializeToString,
+            data__pb2.SubscriptionInfoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSubscriptions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/qmt.data.DataService/ListSubscriptions',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            data__pb2.SubscriptionListResponse.FromString,
             options,
             channel_credentials,
             insecure,
