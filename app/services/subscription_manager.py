@@ -3,14 +3,13 @@
 负责管理xtdata行情订阅的生命周期和数据分发
 """
 import asyncio
-import threading
-import time
-import uuid
-from typing import Dict, List, Optional, AsyncIterator, Any
-from datetime import datetime
-from dataclasses import dataclass, field
-import sys
 import os
+import sys
+import threading
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -28,8 +27,8 @@ except ImportError:
     xtdata = MockModule()
 
 from app.config import Settings, XTQuantMode
-from app.utils.logger import logger
 from app.utils.exceptions import DataServiceException
+from app.utils.logger import logger
 
 
 @dataclass
@@ -118,14 +117,15 @@ class SubscriptionManager:
         此方法在xtdata的后台线程中被调用
         """
         try:
-            symbol = data.get('stock_code') or data.get('symbol')
-            if not symbol:
+            symbols = data.keys()
+            if not symbols:
                 logger.warning(f"收到无效的行情数据（缺少symbol）: {data}")
                 return
-            
+                        
             # 查找所有订阅了该symbol的订阅ID
             with self._lock:
-                subscription_ids = self._symbol_to_subscriptions.get(symbol, [])
+                for symbol in symbols:
+                    subscription_ids = self._symbol_to_subscriptions.get(symbol, [])
             
             if not subscription_ids:
                 return
