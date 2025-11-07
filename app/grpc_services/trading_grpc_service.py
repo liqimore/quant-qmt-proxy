@@ -1,24 +1,23 @@
 """
 gRPC 交易服务实现
 """
-import grpc
-from typing import List
 from datetime import datetime
 
-# 导入生成的 protobuf 代码
-from generated import trading_pb2, trading_pb2_grpc, common_pb2
+import grpc
+
+from app.models.trading_models import AccountType as RestAccountType
+from app.models.trading_models import CancelOrderRequest as RestCancelOrderRequest
+from app.models.trading_models import ConnectRequest as RestConnectRequest
+from app.models.trading_models import OrderRequest as RestOrderRequest
+from app.models.trading_models import OrderSide as RestOrderSide
+from app.models.trading_models import OrderType as RestOrderType
 
 # 导入现有服务
 from app.services.trading_service import TradingService
-from app.models.trading_models import (
-    ConnectRequest as RestConnectRequest,
-    OrderRequest as RestOrderRequest,
-    CancelOrderRequest as RestCancelOrderRequest,
-    OrderSide as RestOrderSide,
-    OrderType as RestOrderType,
-    AccountType as RestAccountType
-)
 from app.utils.exceptions import TradingServiceException
+
+# 导入生成的 protobuf 代码
+from generated import common_pb2, trading_pb2, trading_pb2_grpc
 
 
 class TradingGrpcService(trading_pb2_grpc.TradingServiceServicer):

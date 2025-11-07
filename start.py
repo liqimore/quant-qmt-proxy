@@ -1,10 +1,11 @@
 """
 多环境启动脚本
 """
-import os
-import sys
 import argparse
+import os
+
 import uvicorn
+
 from app.config import get_settings
 
 

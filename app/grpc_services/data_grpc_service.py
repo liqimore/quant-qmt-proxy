@@ -1,23 +1,23 @@
 """
 gRPC 数据服务实现
 """
+from typing import Any
+
 import grpc
-from typing import List, Dict, Any, Optional
+from google.protobuf import empty_pb2
 from pydantic import BaseModel
 
-# 导入生成的 protobuf 代码
-from generated import data_pb2, data_pb2_grpc, common_pb2
-from google.protobuf import empty_pb2
+from app.models.data_models import FinancialDataRequest as RestFinancialDataRequest
+from app.models.data_models import IndexWeightRequest as RestIndexWeightRequest
+from app.models.data_models import MarketDataRequest as RestMarketDataRequest
+from app.models.data_models import PeriodType
 
 # 导入现有服务
 from app.services.data_service import DataService
-from app.models.data_models import (
-    MarketDataRequest as RestMarketDataRequest,
-    FinancialDataRequest as RestFinancialDataRequest,
-    IndexWeightRequest as RestIndexWeightRequest,
-    PeriodType
-)
 from app.utils.exceptions import DataServiceException
+
+# 导入生成的 protobuf 代码
+from generated import common_pb2, data_pb2, data_pb2_grpc
 
 
 def pydantic_to_dict(obj: Any) -> Any:
@@ -1351,10 +1351,11 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         
         持续推送行情数据，直到客户端断开连接
         """
+        import asyncio
+        from datetime import datetime
+
         from app.config import get_settings
         from app.dependencies import get_subscription_manager
-        from datetime import datetime
-        import asyncio
         
         try:
             settings = get_settings()
@@ -1452,10 +1453,11 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
         """
         订阅全推行情（Server Streaming）
         """
+        import asyncio
+        from datetime import datetime
+
         from app.config import get_settings
         from app.dependencies import get_subscription_manager
-        from datetime import datetime
-        import asyncio
         
         try:
             settings = get_settings()

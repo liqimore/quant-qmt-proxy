@@ -1,9 +1,10 @@
 """
 启动脚本 - 同时运行 REST API 和 gRPC 服务
 """
-import sys
 import os
+import sys
 import threading
+
 import uvicorn
 
 # 添加项目根目录到 Python 路径

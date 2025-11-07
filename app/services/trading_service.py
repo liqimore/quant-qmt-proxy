@@ -1,10 +1,10 @@
 """
 交易服务层
 """
-import sys
 import os
-from typing import List, Dict, Any, Optional
+import sys
 from datetime import datetime
+from typing import List
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -25,15 +25,24 @@ except ImportError as e:
     xttrader = MockModule()
     xtconstant = MockModule()
 
+from app.config import Settings, XTQuantMode
 from app.models.trading_models import (
-    AccountInfo, PositionInfo, OrderRequest, OrderResponse,
-    CancelOrderRequest, TradeInfo, AssetInfo, RiskInfo,
-    StrategyInfo, ConnectRequest, ConnectResponse,
-    AccountType, OrderSide, OrderType, OrderStatus
+    AccountInfo,
+    AccountType,
+    AssetInfo,
+    CancelOrderRequest,
+    ConnectRequest,
+    ConnectResponse,
+    OrderRequest,
+    OrderResponse,
+    OrderStatus,
+    PositionInfo,
+    RiskInfo,
+    StrategyInfo,
+    TradeInfo,
 )
 from app.utils.exceptions import TradingServiceException
 from app.utils.helpers import validate_stock_code
-from app.config import Settings, XTQuantMode
 from app.utils.logger import logger
 
 

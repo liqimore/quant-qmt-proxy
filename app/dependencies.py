@@ -1,19 +1,19 @@
 """
 依赖注入模块
 """
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
-import sys
 import os
+import sys
+from typing import Optional
+
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.config import get_settings, Settings
+from app.config import Settings, get_settings
 from app.utils.exceptions import AuthenticationException
 from app.utils.logger import logger
-
 
 # 安全方案
 security = HTTPBearer(auto_error=False)

@@ -164,7 +164,7 @@ class SubscriptionManager:
             try:
                 queue.get_nowait()
                 queue.put_nowait(data)
-                logger.warning(f"订阅队列已满，丢弃旧数据")
+                logger.warning("订阅队列已满，丢弃旧数据")
             except Exception as e:
                 logger.error(f"处理队列满异常: {e}")
     

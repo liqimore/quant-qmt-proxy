@@ -1,10 +1,10 @@
 """
 数据服务层
 """
-import sys
 import os
-from typing import List, Dict, Any, Optional
+import sys
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -27,25 +27,41 @@ except ImportError as e:
     xttrader = MockModule()
     xtconstant = MockModule()
 
+from app.config import Settings, XTQuantMode
 from app.models.data_models import (
-    MarketDataRequest, FinancialDataRequest, SectorRequest, 
-    IndexWeightRequest, MarketDataResponse, FinancialDataResponse,
-    SectorResponse, IndexWeightResponse, InstrumentInfo,
-    TradingCalendarResponse, ETFInfoResponse,
-    # 新增模型导入
-    InstrumentTypeInfo, HolidayInfo, ConvertibleBondInfo, IpoInfo,
-    PeriodListResponse, DataDirResponse, DividendFactor, TickData,
-    DownloadRequest, DownloadResponse, DownloadTaskStatus,
-    SectorCreateRequest, SectorCreateResponse, SectorAddRequest,
-    SectorRemoveStockRequest, SectorResetRequest,
-    L2QuoteData, L2OrderData, L2TransactionData,
-    FullTickRequest, FullKlineRequest, LocalDataRequest,
-    DownloadFinancialDataRequest, DownloadFinancialDataBatchRequest, 
-    DownloadIndexWeightRequest, DownloadHistoryContractsRequest
+    ConvertibleBondInfo,
+    DataDirResponse,
+    DividendFactor,
+    DownloadFinancialDataBatchRequest,
+    DownloadFinancialDataRequest,
+    DownloadHistoryContractsRequest,
+    DownloadIndexWeightRequest,
+    DownloadResponse,
+    DownloadTaskStatus,
+    FinancialDataRequest,
+    FinancialDataResponse,
+    FullKlineRequest,
+    FullTickRequest,
+    HolidayInfo,
+    IndexWeightRequest,
+    IndexWeightResponse,
+    InstrumentInfo,
+    InstrumentTypeInfo,
+    IpoInfo,
+    L2OrderData,
+    L2QuoteData,
+    L2TransactionData,
+    LocalDataRequest,
+    MarketDataRequest,
+    MarketDataResponse,
+    PeriodListResponse,
+    SectorCreateResponse,
+    SectorResponse,
+    TickData,
+    TradingCalendarResponse,
 )
 from app.utils.exceptions import DataServiceException
-from app.utils.helpers import serialize_data, validate_stock_code, validate_date_range
-from app.config import Settings, XTQuantMode
+from app.utils.helpers import validate_stock_code
 from app.utils.logger import logger
 
 
@@ -81,7 +97,6 @@ class DataService:
             xtdata.enable_hello = False  # 禁用hello信息，减少输出
             
             import threading
-            import time
             
             connect_result = {'client': None, 'error': None}
             
@@ -1590,7 +1605,7 @@ class DataService:
                     data = xtdata.get_l2_quote(stock_codes)
                     
                     if not data:
-                        logger.warning(f"未获取到任何Level2数据")
+                        logger.warning("未获取到任何Level2数据")
                         return results
                     
                     for stock_code in stock_codes:
@@ -1647,7 +1662,7 @@ class DataService:
                     data = xtdata.get_l2_order(stock_codes)
                     
                     if not data:
-                        logger.warning(f"未获取到任何Level2委托数据")
+                        logger.warning("未获取到任何Level2委托数据")
                         return results
                     
                     for stock_code in stock_codes:
@@ -1697,7 +1712,7 @@ class DataService:
                     data = xtdata.get_l2_transaction(stock_codes)
                     
                     if not data:
-                        logger.warning(f"未获取到任何Level2成交数据")
+                        logger.warning("未获取到任何Level2成交数据")
                         return results
                     
                     for stock_code in stock_codes:

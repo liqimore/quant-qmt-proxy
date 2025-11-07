@@ -1,18 +1,27 @@
 """
 交易服务路由
 """
-from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from app.services.trading_service import TradingService
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.dependencies import get_trading_service, verify_api_key
 from app.models.trading_models import (
-    ConnectRequest, ConnectResponse, AccountInfo, PositionInfo,
-    OrderRequest, OrderResponse, CancelOrderRequest, TradeInfo,
-    AssetInfo, RiskInfo, StrategyInfo
+    AccountInfo,
+    AssetInfo,
+    CancelOrderRequest,
+    ConnectRequest,
+    ConnectResponse,
+    OrderRequest,
+    OrderResponse,
+    PositionInfo,
+    RiskInfo,
+    StrategyInfo,
+    TradeInfo,
 )
-from app.utils.helpers import format_response
+from app.services.trading_service import TradingService
 from app.utils.exceptions import TradingServiceException, handle_xtquant_exception
-from app.dependencies import verify_api_key, get_trading_service
-from app.config import get_settings, Settings
+from app.utils.helpers import format_response
 
 router = APIRouter(prefix="/api/v1/trading", tags=["交易服务"])
 
