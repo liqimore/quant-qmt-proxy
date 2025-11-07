@@ -1,22 +1,85 @@
 """
 FastAPI主应用入口
 """
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import sys
 import os
+import sys
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request, applications
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import JSONResponse
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.config import get_settings, Settings
-from app.routers import health, data, trading, websocket
+from app.config import get_settings
+from app.routers import data, health, trading, websocket
+from app.utils.exceptions import XTQuantException
 from app.utils.helpers import format_response
-from app.utils.exceptions import XTQuantException, handle_xtquant_exception
 from app.utils.logger import configure_logging, logger
 
+
+def reset_api_docs(swagger_ui_version: str = "5", redoc_version: str = "next") -> None:
+    """
+    修复 Swagger UI 和 ReDoc API 文档 CDN 无法访问的问题
+
+    通过猴子补丁的方式替换 FastAPI 默认的文档 CDN 链接，
+    使用 unpkg.com 的 CDN 来提供更好的访问体验。
+
+    :param swagger_ui_version: Swagger UI 版本号，默认为 "5"
+    :param redoc_version: ReDoc 版本号，默认为 "next"
+
+    Example:
+        # 在应用启动时调用
+        reset_api_docs()
+
+        # 或者指定特定版本
+        reset_api_docs(swagger_ui_version="4", redoc_version="latest")
+    """
+    # 构建 Swagger UI CDN URLs
+    swagger_css_url = f"https://unpkg.com/swagger-ui-dist@{swagger_ui_version}/swagger-ui.css"
+    swagger_js_url = f"https://unpkg.com/swagger-ui-dist@{swagger_ui_version}/swagger-ui-bundle.js"
+
+    # 构建 ReDoc CDN URL
+    redoc_js_url = f"https://unpkg.com/redoc@{redoc_version}/bundles/redoc.standalone.js"
+
+    def swagger_monkey_patch(*args, **kwargs):
+        """
+        Swagger UI 猴子补丁函数
+
+        替换默认的 Swagger UI CDN 链接
+        """
+        logger.debug(f"Using Swagger UI CSS: {swagger_css_url}")
+        logger.debug(f"Using Swagger UI JS: {swagger_js_url}")
+
+        return get_swagger_ui_html(
+            *args,
+            **kwargs,
+            swagger_css_url=swagger_css_url,
+            swagger_js_url=swagger_js_url,
+        )
+
+    def redoc_monkey_patch(*args, **kwargs):
+        """
+        ReDoc 猴子补丁函数
+
+        替换默认的 ReDoc CDN 链接
+        """
+        logger.debug(f"Using ReDoc JS: {redoc_js_url}")
+
+        return get_redoc_html(
+            *args,
+            **kwargs,
+            redoc_js_url=redoc_js_url,
+        )
+
+    # 应用猴子补丁
+    applications.get_swagger_ui_html = swagger_monkey_patch
+    applications.get_redoc_html = redoc_monkey_patch
+
+    logger.debug("API docs CDN URLs have been successfully patched")
+    logger.debug("API docs CDN URLs have been successfully patched")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +100,7 @@ async def lifespan(app: FastAPI):
     
     # 初始化订阅管理器并设置事件循环
     import asyncio
+
     from app.dependencies import get_subscription_manager
     
     try:
@@ -80,6 +144,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+reset_api_docs()
 
 # 全局异常处理
 @app.exception_handler(XTQuantException)

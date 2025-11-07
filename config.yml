@@ -29,7 +29,7 @@ grpc:
 # xtquant配置
 xtquant:
   # QMT安装路径
-  qmt_userdata_path: "C:/quant/国金QMT交易端模拟/userdata_mini"
+  qmt_userdata_path: "D:\\国金QMT交易端模拟\\userdata_mini"
   
   # 数据路径配置
   data:
