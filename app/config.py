@@ -2,10 +2,11 @@
 应用配置管理
 """
 import os
-import yaml
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import yaml
+from pydantic import BaseModel, Field
 
 
 class XTQuantMode(str, Enum):
@@ -195,7 +196,7 @@ def load_config(config_file: Optional[str] = None) -> Settings:
         
         return Settings(**final_config)
         
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         return Settings()
