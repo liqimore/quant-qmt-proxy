@@ -1,18 +1,16 @@
 """
 WebSocket路由 - 用于实时行情推送
 """
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query, status
-from fastapi.responses import JSONResponse
 import asyncio
 import json
-from typing import Optional
 from datetime import datetime
 
-from app.dependencies import get_subscription_manager
-from app.config import get_settings, Settings
-from app.utils.logger import logger
-from app.utils.exceptions import DataServiceException
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 
+from app.config import Settings, get_settings
+from app.dependencies import get_subscription_manager
+from app.utils.exceptions import DataServiceException
+from app.utils.logger import logger
 
 router = APIRouter(tags=["WebSocket"])
 
@@ -129,7 +127,7 @@ async def websocket_quote_stream(
                 "message": f"服务器内部错误: {str(e)}"
             })
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-        except:
+        except Exception:
             pass
     
     finally:

@@ -1,16 +1,16 @@
 """
 gRPC 服务器
 """
-import grpc
 from concurrent import futures
-import sys
 
-from generated import data_pb2_grpc, trading_pb2_grpc, health_pb2_grpc
-from app.grpc_services.data_grpc_service import DataGrpcService
-from app.grpc_services.trading_grpc_service import TradingGrpcService
-from app.grpc_services.health_grpc_service import HealthGrpcService
+import grpc
+
 from app.config import get_settings
+from app.grpc_services.data_grpc_service import DataGrpcService
+from app.grpc_services.health_grpc_service import HealthGrpcService
+from app.grpc_services.trading_grpc_service import TradingGrpcService
 from app.utils.logger import configure_logging, logger
+from generated import data_pb2_grpc, health_pb2_grpc, trading_pb2_grpc
 
 
 def serve():

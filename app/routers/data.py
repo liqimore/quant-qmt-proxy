@@ -1,30 +1,44 @@
 """
 数据服务路由
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
 from datetime import datetime
-from app.services.data_service import DataService
-from app.models.data_models import (
-    MarketDataRequest, FinancialDataRequest, SectorRequest,
-    IndexWeightRequest, MarketDataResponse, FinancialDataResponse,
-    SectorResponse, IndexWeightResponse, InstrumentInfo,
-    TradingCalendarResponse, ETFInfoResponse,
-    # 阶段2: 行情数据请求模型
-    LocalDataRequest, FullTickRequest, DividFactorsRequest, FullKlineRequest,
-    # 阶段3: 数据下载请求模型
-    DownloadHistoryDataRequest, DownloadHistoryDataBatchRequest, DownloadFinancialDataRequest,
-    DownloadFinancialDataBatchRequest, DownloadIndexWeightRequest, DownloadHistoryContractsRequest,
-    # 阶段5: Level2请求模型
-    L2QuoteRequest, L2OrderRequest, L2TransactionRequest,
-    # 阶段6: 订阅请求模型
-    SubscriptionRequest, SubscriptionResponse, UnsubscribeRequest, QuoteUpdate
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.config import Settings, get_settings
+from app.dependencies import get_data_service, verify_api_key
+from app.models.data_models import (  # 阶段2: 行情数据请求模型; 阶段3: 数据下载请求模型; 阶段5: Level2请求模型; 阶段6: 订阅请求模型
+    DividFactorsRequest,
+    DownloadFinancialDataBatchRequest,
+    DownloadFinancialDataRequest,
+    DownloadHistoryContractsRequest,
+    DownloadHistoryDataBatchRequest,
+    DownloadHistoryDataRequest,
+    DownloadIndexWeightRequest,
+    ETFInfoResponse,
+    FinancialDataRequest,
+    FinancialDataResponse,
+    FullKlineRequest,
+    FullTickRequest,
+    IndexWeightRequest,
+    IndexWeightResponse,
+    InstrumentInfo,
+    L2OrderRequest,
+    L2QuoteRequest,
+    L2TransactionRequest,
+    LocalDataRequest,
+    MarketDataRequest,
+    MarketDataResponse,
+    SectorRequest,
+    SectorResponse,
+    SubscriptionRequest,
+    TradingCalendarResponse,
 )
-from app.utils.helpers import format_response
+from app.services.data_service import DataService
 from app.utils.exceptions import DataServiceException, handle_xtquant_exception
+from app.utils.helpers import format_response
 from app.utils.logger import logger
-from app.dependencies import verify_api_key, get_data_service
-from app.config import get_settings, Settings
 
 router = APIRouter(prefix="/api/v1/data", tags=["数据服务"])
 
@@ -34,7 +48,7 @@ async def get_market_data(
     request: MarketDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+) -> List[MarketDataResponse]:
     """获取市场数据"""
     try:
         results = data_service.get_market_data(request)
@@ -53,7 +67,7 @@ async def get_financial_data(
     request: FinancialDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+)-> List[FinancialDataResponse]:
     """获取财务数据"""
     try:
         results = data_service.get_financial_data(request)
@@ -71,7 +85,7 @@ async def get_financial_data(
 async def get_sector_list(
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+) -> List[SectorResponse]:
     """获取板块列表"""
     try:
         results = data_service.get_sector_list()
@@ -208,7 +222,6 @@ async def get_instrument_type(
 ):
     """获取合约类型"""
     try:
-        from app.models.data_models import InstrumentTypeInfo
         result = data_service.get_instrument_type(stock_code)
         return format_response(data=result, message="获取合约类型成功")
     except Exception as e:
@@ -225,7 +238,6 @@ async def get_holidays(
 ):
     """获取节假日列表"""
     try:
-        from app.models.data_models import HolidayInfo
         result = data_service.get_holidays()
         return format_response(data=result, message="获取节假日列表成功")
     except Exception as e:
@@ -242,7 +254,6 @@ async def get_cb_info(
 ):
     """获取可转债信息"""
     try:
-        from app.models.data_models import ConvertibleBondInfo
         result = data_service.get_cb_info()
         return format_response(data=result, message="获取可转债信息成功")
     except Exception as e:
@@ -259,7 +270,6 @@ async def get_ipo_info(
 ):
     """获取新股申购信息"""
     try:
-        from app.models.data_models import IpoInfo
         result = data_service.get_ipo_info()
         return format_response(data=result, message="获取新股申购信息成功")
     except Exception as e:
@@ -276,7 +286,6 @@ async def get_period_list(
 ):
     """获取可用周期列表"""
     try:
-        from app.models.data_models import PeriodListResponse
         result = data_service.get_period_list()
         return format_response(data=result, message="获取可用周期列表成功")
     except Exception as e:
@@ -293,7 +302,6 @@ async def get_data_dir(
 ):
     """获取本地数据路径"""
     try:
-        from app.models.data_models import DataDirResponse
         result = data_service.get_data_dir()
         return format_response(data=result, message="获取数据路径成功")
     except Exception as e:
@@ -440,7 +448,6 @@ async def download_financial_data_batch(
 ):
     """批量下载财务数据（带回调）"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_financial_data_batch(request)
         return format_response(data=result, message="批量下载财务数据任务已提交")
     except Exception as e:
@@ -457,7 +464,6 @@ async def download_sector_data(
 ):
     """下载板块数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_sector_data()
         return format_response(data=result, message="下载板块数据任务已提交")
     except Exception as e:
@@ -475,7 +481,6 @@ async def download_index_weight(
 ):
     """下载指数权重数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_index_weight(request)
         return format_response(data=result, message="下载指数权重数据任务已提交")
     except Exception as e:
@@ -492,7 +497,6 @@ async def download_cb_data(
 ):
     """下载可转债数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_cb_data()
         return format_response(data=result, message="下载可转债数据任务已提交")
     except Exception as e:
@@ -509,7 +513,6 @@ async def download_etf_info(
 ):
     """下载ETF基础信息"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_etf_info()
         return format_response(data=result, message="下载ETF信息任务已提交")
     except Exception as e:
@@ -526,7 +529,6 @@ async def download_holiday_data(
 ):
     """下载节假日数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_holiday_data()
         return format_response(data=result, message="下载节假日数据任务已提交")
     except Exception as e:
@@ -544,7 +546,6 @@ async def download_history_contracts(
 ):
     """下载历史合约数据"""
     try:
-        from app.models.data_models import DownloadResponse
         result = data_service.download_history_contracts(request)
         return format_response(data=result, message="下载历史合约数据任务已提交")
     except Exception as e:
@@ -582,7 +583,6 @@ async def create_sector(
 ):
     """创建板块"""
     try:
-        from app.models.data_models import SectorCreateRequest, SectorCreateResponse
         parent_node = request.get("parent_node", "")
         sector_name = request.get("sector_name", "")
         overwrite = request.get("overwrite", True)
@@ -603,7 +603,6 @@ async def add_sector(
 ):
     """添加股票到板块"""
     try:
-        from app.models.data_models import SectorAddRequest
         sector_name = request.get("sector_name", "")
         stock_list = request.get("stock_list", [])
         data_service.add_sector(sector_name, stock_list)
@@ -623,7 +622,6 @@ async def remove_stock_from_sector(
 ):
     """从板块移除股票"""
     try:
-        from app.models.data_models import SectorRemoveStockRequest
         sector_name = request.get("sector_name", "")
         stock_list = request.get("stock_list", [])
         data_service.remove_stock_from_sector(sector_name, stock_list)
@@ -660,7 +658,6 @@ async def reset_sector(
 ):
     """重置板块成分股"""
     try:
-        from app.models.data_models import SectorResetRequest
         sector_name = request.get("sector_name", "")
         stock_list = request.get("stock_list", [])
         data_service.reset_sector(sector_name, stock_list)
@@ -682,7 +679,6 @@ async def get_l2_quote(
 ):
     """获取Level2快照数据（10档行情）"""
     try:
-        from app.models.data_models import L2QuoteData
         result = data_service.get_l2_quote(request.stock_codes)
         return format_response(data=result, message="获取Level2快照数据成功")
     except Exception as e:
@@ -700,7 +696,6 @@ async def get_l2_order(
 ):
     """获取Level2逐笔委托数据"""
     try:
-        from app.models.data_models import L2OrderData
         result = data_service.get_l2_order(request.stock_codes)
         return format_response(data=result, message="获取Level2逐笔委托数据成功")
     except Exception as e:
@@ -718,7 +713,6 @@ async def get_l2_transaction(
 ):
     """获取Level2逐笔成交数据"""
     try:
-        from app.models.data_models import L2TransactionData
         result = data_service.get_l2_transaction(request.stock_codes)
         return format_response(data=result, message="获取Level2逐笔成交数据成功")
     except Exception as e:
@@ -747,8 +741,8 @@ async def create_subscription(
     """
     try:
         from app.dependencies import get_subscription_manager
-        from app.models.data_models import SubscriptionResponse, SubscriptionType
-        
+        from app.models.data_models import SubscriptionType
+
         # 获取订阅管理器
         subscription_manager = get_subscription_manager(settings)
         
@@ -801,7 +795,7 @@ async def delete_subscription(
     """
     try:
         from app.dependencies import get_subscription_manager
-        
+
         # 获取订阅管理器
         subscription_manager = get_subscription_manager(settings)
         
@@ -841,7 +835,7 @@ async def get_subscription_info(
     """
     try:
         from app.dependencies import get_subscription_manager
-        
+
         # 获取订阅管理器
         subscription_manager = get_subscription_manager(settings)
         
@@ -879,7 +873,7 @@ async def list_subscriptions(
     """
     try:
         from app.dependencies import get_subscription_manager
-        
+
         # 获取订阅管理器
         subscription_manager = get_subscription_manager(settings)
         

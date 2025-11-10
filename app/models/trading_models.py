@@ -1,10 +1,11 @@
 """
 交易相关模型
 """
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class AccountType(str, Enum):
@@ -80,13 +81,13 @@ class OrderRequest(BaseModel):
     price: Optional[float] = Field(None, description="价格")
     strategy_name: Optional[str] = Field(None, description="策略名称")
     
-    @validator('volume')
+    @field_validator('volume')
     def validate_volume(cls, v):
         if v <= 0:
             raise ValueError('数量必须大于0')
         return v
     
-    @validator('price')
+    @field_validator('price')
     def validate_price(cls, v):
         if v is not None and v <= 0:
             raise ValueError('价格必须大于0')

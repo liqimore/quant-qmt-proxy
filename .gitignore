@@ -75,3 +75,5 @@ tmp/
 # OS
 Thumbs.db
 .DS_Store
+
+diff.txt

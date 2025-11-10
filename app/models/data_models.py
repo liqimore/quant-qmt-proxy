@@ -1,10 +1,10 @@
 """
 数据相关模型
 """
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any, Union
-from datetime import datetime, date
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class PeriodType(str, Enum):
@@ -36,13 +36,13 @@ class DataRequest(BaseModel):
     end_date: str = Field(..., description="结束日期 YYYYMMDD")
     period: PeriodType = Field(PeriodType.DAILY, description="数据周期")
     
-    @validator('stock_codes')
+    @field_validator('stock_codes')
     def validate_stock_codes(cls, v):
         if not v or len(v) == 0:
             raise ValueError('股票代码列表不能为空')
         return v
     
-    @validator('start_date', 'end_date')
+    @field_validator('start_date', 'end_date')
     def validate_date_format(cls, v):
         if len(v) != 8 or not v.isdigit():
             raise ValueError('日期格式必须为YYYYMMDD')
@@ -517,7 +517,7 @@ class SubscriptionRequest(BaseModel):
         description="订阅类型"
     )
     
-    @validator('symbols')
+    @field_validator('symbols')
     def validate_symbols(cls, v):
         if not v or len(v) == 0:
             raise ValueError('股票代码列表不能为空')
@@ -527,7 +527,7 @@ class SubscriptionRequest(BaseModel):
             raise ValueError('股票代码列表不能为空')
         return v
     
-    @validator('adjust_type')
+    @field_validator('adjust_type')
     def validate_adjust_type(cls, v):
         if v not in ["none", "front", "back"]:
             raise ValueError('复权类型必须是 none, front 或 back')

@@ -1,9 +1,10 @@
 """
 启动脚本 - 同时运行 REST API 和 gRPC 服务
 """
-import sys
 import os
+import sys
 import threading
+
 import uvicorn
 
 # 添加项目根目录到 Python 路径
@@ -68,12 +69,12 @@ if __name__ == '__main__':
     
     # 主线程运行 FastAPI
     # 热加载配置：关闭热加载，或仅监控 .py 文件
-    reload_enabled = False  # 默认关闭热加载
+    reload_enabled = True  # 默认关闭热加载
     reload_includes = None
     
     # 如果需要启用热加载，取消下面的注释并设置为 True
-    # reload_enabled = settings.app.debug
-    # reload_includes = ["*.py"]  # 仅监控 Python 源码文件
+    reload_enabled = settings.app.debug
+    reload_includes = ["*.py"]  # 仅监控 Python 源码文件
     
     uvicorn.run(
         "app.main:app",
