@@ -48,7 +48,7 @@ async def get_market_data(
     request: MarketDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+) -> List[MarketDataResponse]:
     """获取市场数据"""
     try:
         results = data_service.get_market_data(request)
@@ -67,7 +67,7 @@ async def get_financial_data(
     request: FinancialDataRequest,
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+)-> List[FinancialDataResponse]:
     """获取财务数据"""
     try:
         results = data_service.get_financial_data(request)
@@ -85,7 +85,7 @@ async def get_financial_data(
 async def get_sector_list(
     api_key: str = Depends(verify_api_key),
     data_service: DataService = Depends(get_data_service)
-):
+) -> List[SectorResponse]:
     """获取板块列表"""
     try:
         results = data_service.get_sector_list()
