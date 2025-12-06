@@ -21,7 +21,7 @@ from app.utils.helpers import format_response
 from app.utils.logger import configure_logging, logger
 
 
-def reset_api_docs(swagger_ui_version: str = "5", redoc_version: str = "next") -> None:
+def reset_api_docs(swagger_ui_version: str = "5", redoc_version: str = "2") -> None:
     """
     修复 Swagger UI 和 ReDoc API 文档 CDN 无法访问的问题
 
@@ -29,7 +29,7 @@ def reset_api_docs(swagger_ui_version: str = "5", redoc_version: str = "next") -
     使用 unpkg.com 的 CDN 来提供更好的访问体验。
 
     :param swagger_ui_version: Swagger UI 版本号，默认为 "5"
-    :param redoc_version: ReDoc 版本号，默认为 "next"
+    :param redoc_version: ReDoc 版本号，默认为 "2"
 
     Example:
         # 在应用启动时调用
