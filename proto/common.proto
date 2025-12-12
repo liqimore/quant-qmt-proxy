@@ -35,6 +35,9 @@ enum PeriodType {
   PERIOD_TYPE_1D = 7;
   PERIOD_TYPE_1W = 8;
   PERIOD_TYPE_1MON = 9;
+  PERIOD_TYPE_1Q = 10;
+  PERIOD_TYPE_1HY = 11;
+  PERIOD_TYPE_1Y = 12;
 }
 
 // 通用响应状态

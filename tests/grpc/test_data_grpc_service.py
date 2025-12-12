@@ -115,7 +115,7 @@ class TestDataGrpcService:
         def test_get_market_data_with_adjustment(self, data_stub):
             """测试复权数据"""
             # TODO: 测试前复权、后复权、不复权
-            adjust_types = ['none', 'front', 'back']
+            adjust_types = ['none', 'front', 'back', 'front_ratio', 'back_ratio']
             
             for adjust_type in adjust_types:
                 # request = data_pb2.MarketDataRequest(

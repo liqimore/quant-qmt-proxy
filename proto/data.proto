@@ -14,7 +14,7 @@ message MarketDataRequest {
   string end_date = 3;                // YYYYMMDD
   common.PeriodType period = 4;       // 周期类型
   repeated string fields = 5;         // 字段列表 ["open", "close", ...]
-  string adjust_type = 6;             // 复权类型 "none", "front", "back"
+  string adjust_type = 6;             // 复权类型 "none", "front", "back", front_ratio, back_ratio
 }
 
 // K线数据点
@@ -568,7 +568,7 @@ enum SubscriptionType {
 // 订阅请求
 message SubscriptionRequest {
   repeated string symbols = 1;           // 股票代码列表
-  string adjust_type = 2;                // 复权类型: none, front, back
+  string adjust_type = 2;                // 复权类型: none, front, back, front_ratio, back_ratio
   SubscriptionType subscription_type = 3; // 订阅类型
 }
 
