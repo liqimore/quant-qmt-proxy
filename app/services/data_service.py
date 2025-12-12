@@ -5,7 +5,7 @@ import os
 import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
+from app.utils.logger import logger
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -15,6 +15,7 @@ try:
     from xtquant import xtconstant
     XTQUANT_AVAILABLE = True
 except ImportError as e:
+    logger.warning("xtquant模块未正确安装")
     XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
@@ -62,7 +63,7 @@ from app.models.data_models import (
 )
 from app.utils.exceptions import DataServiceException
 from app.utils.helpers import validate_stock_code
-from app.utils.logger import logger
+
 
 
 class DataService:
@@ -120,9 +121,10 @@ class DataService:
                 self._initialized = True
                 logger.info("xtdata 已连接")
             elif connect_thread.is_alive():
-                logger.warning("xtdata 连接超时，使用模拟数据（请检查QMT是否运行）")
+                logger.warning("xtdata 连接超时，请检查QMT是否运行")
                 self._initialized = False
             else:
+                logger.warning("xtdata 未连接")
                 self._initialized = False
                 
         except KeyboardInterrupt:
@@ -134,9 +136,7 @@ class DataService:
     
     def _should_use_real_data(self) -> bool:
         """判断是否使用真实数据（dev和prod模式都连接xtquant）"""
-        return (
-            XTQUANT_AVAILABLE and 
-            self._initialized and 
+        return (            
             self.settings.xtquant.mode in [XTQuantMode.DEV, XTQuantMode.PROD]
         )
     
@@ -151,14 +151,15 @@ class DataService:
                 if self._should_use_real_data():
                     # 使用真实xtdata接口
                     try:
-                        # 先下载历史数据（确保本地有数据）
-                        logger.debug("下载历史数据...")
-                        xtdata.download_history_data(
-                            stock_code=stock_code,
-                            period=request.period.value,
-                            start_time=request.start_date,
-                            end_time=request.end_date
-                        )
+                        # 先下载历史数据（确保本地有数据）                        
+                        if not request.disable_download:
+                            logger.debug("下载历史数据...")
+                            xtdata.download_history_data(
+                                stock_code=stock_code,
+                                period=request.period.value,
+                                start_time=request.start_date,
+                                end_time=request.end_date
+                            )
                         
                         # 注意：stock_list必须是列表，field_list也必须是列表
                         data = xtdata.get_market_data(
@@ -168,7 +169,8 @@ class DataService:
                             start_time=request.start_date,
                             end_time=request.end_date,
                             count=-1,
-                            dividend_type=request.adjust_type or "none"
+                            dividend_type=request.adjust_type or "none",
+                            fill_data=request.fill_data
                         )
                         
                         logger.debug(f"获取成功，原始数据类型: {type(data)}")
@@ -180,6 +182,8 @@ class DataService:
                             logger.debug(f"数据字典keys: {list(data.keys())}")
                             for k, v in data.items():
                                 logger.debug(f"[{k}] 类型: {type(v)}, 形状: {v.shape if hasattr(v, 'shape') else 'N/A'}")
+                                if hasattr(v, "dtypes"):                                                                        
+                                    logger.debug(f"[{k}] dtypes: {str(v.dtypes).split('\n')[0]}")                                    
                                 if hasattr(v, 'head'):
                                     logger.debug(f"前几行:\n{v.head()}")
                         
@@ -555,6 +559,7 @@ class DataService:
                                     else:
                                         record[field] = float(value)
                                 else:
+                                    logger.debug(f"field: {field} = original {value}")
                                     record[field] = value
                             except Exception as e:
                                 logger.warning(f"获取字段 {field} 失败: {e}")
