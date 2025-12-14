@@ -383,8 +383,8 @@ class DataService:
                     start_time = f"{year}0101"
                     end_time = f"{year}1231"
                     
-                    # 获取沪深市场的交易日（SSE=上交所，SZSE=深交所）
-                    trading_dates_sh = xtdata.get_trading_dates(market="SSE", start_time=start_time, end_time=end_time)
+                    # 获取沪深市场的交易日（SH=上交所，SZ=深交所）
+                    trading_dates_sh = xtdata.get_trading_dates(market="SH", start_time=start_time, end_time=end_time)
                     
                     # 转换为字符串格式 YYYYMMDD
                     trading_dates = [str(d) for d in trading_dates_sh] if trading_dates_sh else []
