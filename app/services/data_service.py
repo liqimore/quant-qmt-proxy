@@ -378,19 +378,19 @@ class DataService:
             if self._should_use_real_data():
                 # 使用真实xtdata接口
                 try:
+                    # 生成该年所有日期，然后排除交易日得到假期
+                    from datetime import datetime, timedelta
                     # xtdata.get_trading_dates需要市场代码和时间范围
                     # 获取指定年份的交易日
                     start_time = f"{year}0101"
                     end_time = f"{year}1231"
                     
-                    # 获取沪深市场的交易日（SH=上交所，SZ=深交所）
+                    # 获取沪深市场的交易日（SH=上交所，SZ=深交所） 返回值为毫秒级时间戳
                     trading_dates_sh = xtdata.get_trading_dates(market="SH", start_time=start_time, end_time=end_time)
                     
                     # 转换为字符串格式 YYYYMMDD
-                    trading_dates = [str(d) for d in trading_dates_sh] if trading_dates_sh else []
+                    trading_dates = [datetime.fromtimestamp(d / 1000).strftime("%Y%m%d") for d in trading_dates_sh] if trading_dates_sh else []
                     
-                    # 生成该年所有日期，然后排除交易日得到假期
-                    from datetime import datetime, timedelta
                     all_dates = []
                     start_date = datetime(year, 1, 1)
                     end_date = datetime(year, 12, 31)
