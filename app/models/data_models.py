@@ -17,7 +17,7 @@ class PeriodType(str, Enum):
     HOUR_1 = "1h"
     DAILY = "1d"
     WEEKLY = "1w"
-    MONTHLY = "1M"
+    MONTHLY = "1mon"
 
 
 class MarketType(str, Enum):
