@@ -533,7 +533,6 @@ Get-Content logs/error.log -Wait -Tail 50
 - **xtquant 仅支持 Windows 系统**
 - 需要 QMT 客户端正在运行（dev/prod 模式）
 - xtdata 连接有 5 秒超时限制
-- 连接失败会自动降级到模拟模式
 - gRPC 最大消息大小限制为 50MB
 - 订阅队列默认最大长度 1000，超出会丢弃旧数据
 - 单实例最大订阅数默认限制为 100

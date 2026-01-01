@@ -18,6 +18,9 @@ class PeriodType(str, Enum):
     DAILY = "1d"
     WEEKLY = "1w"
     MONTHLY = "1mon"
+    QUARTER = "1q"
+    YEAR_HALF = "1hy"
+    YEAR = "1y"
 
 
 class MarketType(str, Enum):
@@ -32,8 +35,8 @@ class MarketType(str, Enum):
 class DataRequest(BaseModel):
     """数据请求基础模型"""
     stock_codes: List[str] = Field(..., description="股票代码列表")
-    start_date: str = Field(..., description="开始日期 YYYYMMDD")
-    end_date: str = Field(..., description="结束日期 YYYYMMDD")
+    start_date: str = Field(..., description="开始日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
+    end_date: str = Field(..., description="结束日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
     period: PeriodType = Field(PeriodType.DAILY, description="数据周期")
     
     @field_validator('stock_codes')
@@ -44,8 +47,8 @@ class DataRequest(BaseModel):
     
     @field_validator('start_date', 'end_date')
     def validate_date_format(cls, v):
-        if len(v) != 8 or not v.isdigit():
-            raise ValueError('日期格式必须为YYYYMMDD')
+        if (len(v) != 8 and len(v) != 14) or not v.isdigit():
+            raise ValueError('日期格式必须为YYYYMMDD 或 YYYYMMDDHHMMSS')
         return v
 
 
@@ -53,6 +56,8 @@ class MarketDataRequest(DataRequest):
     """市场数据请求"""
     fields: Optional[List[str]] = Field(None, description="字段列表")
     adjust_type: Optional[str] = Field("none", description="复权类型")
+    fill_data: bool = Field(True, description="是否填充缺失数据")
+    disable_download: bool = Field(False, description="是否禁用下载功能")
 
 
 class FinancialDataRequest(BaseModel):
@@ -510,8 +515,9 @@ class SubscriptionType(str, Enum):
 
 class SubscriptionRequest(BaseModel):
     """订阅请求"""
-    symbols: List[str] = Field(..., min_items=1, description="股票代码列表（不能为空）")
-    adjust_type: str = Field("none", description="复权类型: none, front, back")
+    symbols: List[str] = Field(..., min_items=1, description="股票代码列表（不能为空）")    
+    period: PeriodType = Field(PeriodType.TICK, description="数据周期")
+    adjust_type: str = Field("none", description="复权类型: none, front, back, front_ratio, back_ratio")
     subscription_type: SubscriptionType = Field(
         SubscriptionType.QUOTE,
         description="订阅类型"
@@ -529,8 +535,8 @@ class SubscriptionRequest(BaseModel):
     
     @field_validator('adjust_type')
     def validate_adjust_type(cls, v):
-        if v not in ["none", "front", "back"]:
-            raise ValueError('复权类型必须是 none, front 或 back')
+        if v not in ["none", "front", "back", "front_ratio", "back_ratio"]:
+            raise ValueError('复权类型必须是 none, front, back, "front_ratio" 或 "back_ratio"')
         return v
 
 
