@@ -45,6 +45,7 @@ class SubscriptionContext:
     subscription_id: str
     symbols: List[str]
     period: str = "tick"
+    start_date: str = ''
     adjust_type: str = "none"
     subids_xtquant: List[int] = field(default_factory=list)  # xtquant内部订阅ID
     subscription_type: str = "quote"  # "quote" 或 "whole_quote"
@@ -220,13 +221,14 @@ class SubscriptionManager:
         self._event_loop = loop
         logger.info("已设置事件循环")
 
-    def subscribe_quote(self, symbols: List[str], period: str = "tick", adjust_type: str = "none") -> str:
+    def subscribe_quote(self, symbols: List[str], period: str = "tick", start_date: str = '', adjust_type: str = "none") -> str:
         """
         订阅单股或多股行情
 
         Args:
             symbols: 股票代码列表
             period: 周期
+            start_date: 开始时间
             adjust_type: 复权类型 "none", "front", "back", "front_ratio", "back_ratio"
 
         Returns:
@@ -256,7 +258,7 @@ class SubscriptionManager:
 
         # 创建订阅上下文
         context = SubscriptionContext(
-            subscription_id=subscription_id, symbols=symbols, period=period, adjust_type=adjust_type, subscription_type="quote"
+            subscription_id=subscription_id, symbols=symbols, period=period, start_date=start_date, adjust_type=adjust_type, subscription_type="quote"
         )
 
         # 注册订阅
@@ -278,17 +280,17 @@ class SubscriptionManager:
                 for symbol in symbols:
                     if adjust_type == "none":
                         # 不复权：使用标准订阅接口
-                        subid_xtquant = xtdata.subscribe_quote(symbol, period=period, count=-1, callback=callback_method)
+                        subid_xtquant = xtdata.subscribe_quote(symbol, period=period, start_time=start_date, count=-1, callback=callback_method)
                         if subid_xtquant < 0:
                             raise DataServiceException(f"订阅失败", error_code="SUBSCRIPTION_XTQUANT_FAILED")
                         context.subids_xtquant.append(subid_xtquant)
-                        logger.info(f"订阅行情（不复权）: {symbol} {period} {subid_xtquant}")
+                        logger.info(f"订阅行情（不复权）: {symbol} {period} {start_date} {subid_xtquant}")
                     else:
                         # 复权：使用subscribe_quote2接口，支持前复权(front), 后复权(back), 等比前复权(front_ratio), 等比后复权(back_ratio)
                         # dividend_type参数: 'front'=前复权, 'back'=后复权, 'front_ratio', 'back_ratio'
                         if not hasattr(xtdata, "subscribe_quote2"):
                             # 如果xtdata版本不支持subscribe_quote2，降级使用普通订阅并警告                            
-                            subid_xtquant = xtdata.subscribe_quote(symbol, period=period, count=-1, callback=callback_method)                            
+                            subid_xtquant = xtdata.subscribe_quote(symbol, period=period, start_time=start_date, count=-1, callback=callback_method)                            
                             if subid_xtquant < 0:
                                 raise DataServiceException(f"订阅失败", error_code="SUBSCRIPTION_XTQUANT_FAILED")
                             context.subids_xtquant.append(subid_xtquant)
@@ -297,7 +299,7 @@ class SubscriptionManager:
                             subid_xtquant = xtdata.subscribe_quote2(
                                 stock_code=symbol,
                                 period=period,  # 默认为tick级别
-                                start_time="",
+                                start_time=start_date,
                                 end_time="",
                                 count=-1,
                                 dividend_type=adjust_type,  # front/back/front_ratio/back_ratio
@@ -306,9 +308,9 @@ class SubscriptionManager:
                             if subid_xtquant < 0:
                                 raise DataServiceException(f"订阅失败", error_code="SUBSCRIPTION_XTQUANT_FAILED")                     
                             context.subids_xtquant.append(subid_xtquant)
-                            logger.info(f"订阅行情（{adjust_type}复权）: {symbol} {period} {subid_xtquant}")
+                            logger.info(f"订阅行情（{adjust_type}复权）: {symbol} {period} {start_date} {subid_xtquant}")
 
-                logger.info(f"已订阅行情: {subscription_id} symbols: {symbols}, period: {period} adjust_type: {adjust_type}, subids_xtquant: {context.subids_xtquant}")
+                logger.info(f"已订阅行情: {subscription_id} symbols: {symbols}, period: {period} start_date: {start_date} adjust_type: {adjust_type}, subids_xtquant: {context.subids_xtquant}")
 
             except Exception as e:
                 # 订阅失败，清理上下文
@@ -320,7 +322,7 @@ class SubscriptionManager:
                             self._symbolperiod_to_subscriptions[symbolperiod].remove(subscription_id)
                     for subid in context.subids_xtquant:
                         try:
-                            xtdata.unsubscribe_quote_by_id(subid)
+                            xtdata.unsubscribe_quote(subid)
                             context.subids_xtquant.remove(subid)
                         except Exception:
                             pass                    
@@ -520,6 +522,7 @@ class SubscriptionManager:
             "subids_xtquant": context.subids_xtquant,
             "symbols": context.symbols,
             "period": context.period,
+            "start_date": context.start_date,
             "adjust_type": context.adjust_type,
             "subscription_type": context.subscription_type,
             "created_at": context.created_at.isoformat(),

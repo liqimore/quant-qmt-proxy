@@ -35,8 +35,8 @@ class MarketType(str, Enum):
 class DataRequest(BaseModel):
     """数据请求基础模型"""
     stock_codes: List[str] = Field(..., description="股票代码列表")
-    start_date: str = Field(..., description="开始日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
-    end_date: str = Field(..., description="结束日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
+    start_date: str = Field('', description="开始日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
+    end_date: str = Field('', description="结束日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
     period: PeriodType = Field(PeriodType.DAILY, description="数据周期")
     
     @field_validator('stock_codes')
@@ -47,6 +47,8 @@ class DataRequest(BaseModel):
     
     @field_validator('start_date', 'end_date')
     def validate_date_format(cls, v):
+        if v == '':
+            return v
         if (len(v) != 8 and len(v) != 14) or not v.isdigit():
             raise ValueError('日期格式必须为YYYYMMDD 或 YYYYMMDDHHMMSS')
         return v
@@ -517,6 +519,7 @@ class SubscriptionRequest(BaseModel):
     """订阅请求"""
     symbols: List[str] = Field(..., min_items=1, description="股票代码列表（不能为空）")    
     period: PeriodType = Field(PeriodType.TICK, description="数据周期")
+    start_date: str = Field('', description="开始日期 YYYYMMDD 或 YYYYMMDDHHMMSS")
     adjust_type: str = Field("none", description="复权类型: none, front, back, front_ratio, back_ratio")
     subscription_type: SubscriptionType = Field(
         SubscriptionType.QUOTE,
@@ -531,6 +534,14 @@ class SubscriptionRequest(BaseModel):
         v = [s.strip() for s in v if s and s.strip()]
         if not v:
             raise ValueError('股票代码列表不能为空')
+        return v
+    
+    @field_validator('start_date')
+    def validate_date_format(cls, v):
+        if v == '':
+            return v
+        if (len(v) != 8 and len(v) != 14) or not v.isdigit():
+            raise ValueError('日期格式必须为YYYYMMDD 或 YYYYMMDDHHMMSS')
         return v
     
     @field_validator('adjust_type')
