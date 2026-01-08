@@ -1129,6 +1129,7 @@ class DataService:
         try:
             if self._should_use_real_data():
                 try:
+                    logger.info(f"下载历史数据开始，stock: {stock_code} period: {period}")
                     # xtdata下载接口是同步的，会阻塞直到完成
                     xtdata.download_history_data(
                         stock_code=stock_code,
@@ -1172,6 +1173,7 @@ class DataService:
             if self._should_use_real_data():
                 try:
                     task_id = f"batch_download_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    logger.info(f"批量下载历史数据开始，任务ID: {task_id}, period: {period}, 股票数: {len(stock_list)}")
                     
                     # xtdata的批量下载接口
                     xtdata.download_history_data2(
