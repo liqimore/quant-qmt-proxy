@@ -748,7 +748,9 @@ async def create_subscription(
         
         # 根据订阅类型创建订阅
         if request.subscription_type == SubscriptionType.WHOLE_QUOTE:
-            subscription_id = subscription_manager.subscribe_whole_quote()
+            subscription_id = subscription_manager.subscribe_whole_quote(
+                symbols=request.symbols                
+            )
         else:
             subscription_id = subscription_manager.subscribe_quote(
                 symbols=request.symbols,
@@ -762,7 +764,7 @@ async def create_subscription(
             "subscription_id": subscription_id,
             "status": "active",
             "created_at": datetime.now().isoformat(),
-            "symbols": request.symbols if request.subscription_type == SubscriptionType.QUOTE else ["*"],
+            "symbols": request.symbols,
             "period": request.period.value,
             "start_date": request.start_date,
             "adjust_type": request.adjust_type,

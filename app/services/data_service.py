@@ -15,7 +15,7 @@ try:
     from xtquant import xtconstant
     XTQUANT_AVAILABLE = True
 except ImportError as e:
-    logger.warning("xtquant模块未正确安装")
+    logger.warning(f"xtquant模块未正确安装, Python Path: {sys.path}")    
     XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
@@ -548,7 +548,7 @@ class DataService:
                         record['time'] = str(date)
                     
                     # 添加其他字段 (包含xtquant所有K线字段)
-                    for field in ['open', 'high', 'low', 'close', 'volume', 'amount', 'settle', 'openInterest', 'preClose', 'suspendFlag']:
+                    for field in ['open', 'high', 'low', 'close', 'volume', 'amount', 'settlementPrice', 'openInterest', 'preClose', 'suspendFlag']:
                         if field in data:
                             try:
                                 value = data[field].loc[stock_code, date]

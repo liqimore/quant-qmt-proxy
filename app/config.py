@@ -172,7 +172,8 @@ def load_config(config_file: Optional[str] = None) -> Settings:
                 "data": {
                     "path": config_data.get("xtquant", {}).get("data", {}).get("path", "./data"),
                     "config_path": config_data.get("xtquant", {}).get("data", {}).get("config_path", "./xtquant/config"),
-                    "qmt_userdata_path": config_data.get("xtquant", {}).get("qmt_userdata_path")
+                    "qmt_userdata_path": config_data.get("xtquant", {}).get("qmt_userdata_path"),
+                    "whole_quote_enabled": config_data.get("xtquant", {}).get("data", {}).get("whole_quote_enabled", False)
                 },
                 "trading": {
                     "allow_real_trading": mode_config.get("allow_real_trading", False),
