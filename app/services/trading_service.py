@@ -5,6 +5,7 @@ import os
 import sys
 from datetime import datetime
 from typing import List
+from app.utils.logger import logger
 
 # 添加xtquant包到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -14,6 +15,7 @@ try:
     from xtquant import xtconstant
     XTQUANT_AVAILABLE = True
 except ImportError as e:
+    logger.error("xtquant模块未正确安装")
     XTQUANT_AVAILABLE = False
     # 创建模拟模块以避免导入错误
     class MockModule:
@@ -84,8 +86,6 @@ class TradingService:
         只有在 prod 模式且配置允许时才允许真实交易
         """
         return (
-            XTQUANT_AVAILABLE and 
-            self._initialized and 
             self.settings.xtquant.mode == XTQuantMode.PROD and
             self.settings.xtquant.trading.allow_real_trading
         )
@@ -95,9 +95,7 @@ class TradingService:
         判断是否连接xtquant获取真实数据（但不一定允许交易）
         dev 和 prod 模式都连接 xtquant
         """
-        return (
-            XTQUANT_AVAILABLE and 
-            self._initialized and 
+        return (            
             self.settings.xtquant.mode in [XTQuantMode.DEV, XTQuantMode.PROD]
         )
     

@@ -1,7 +1,7 @@
 """
 生成 protobuf 代码
 """
-import os
+import os,sys
 import subprocess
 from pathlib import Path
 
@@ -27,7 +27,7 @@ def generate_protobuf():
     
     for proto_file in proto_files:
         cmd = [
-            "python", "-m", "grpc_tools.protoc",
+            sys.executable, "-m", "grpc_tools.protoc",
             f"--proto_path={proto_dir}",
             f"--python_out={output_dir}",
             f"--grpc_python_out={output_dir}",

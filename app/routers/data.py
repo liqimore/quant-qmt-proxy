@@ -752,6 +752,8 @@ async def create_subscription(
         else:
             subscription_id = subscription_manager.subscribe_quote(
                 symbols=request.symbols,
+                period=request.period.value,
+                start_date=request.start_date,
                 adjust_type=request.adjust_type
             )
         
@@ -761,6 +763,9 @@ async def create_subscription(
             "status": "active",
             "created_at": datetime.now().isoformat(),
             "symbols": request.symbols if request.subscription_type == SubscriptionType.QUOTE else ["*"],
+            "period": request.period.value,
+            "start_date": request.start_date,
+            "adjust_type": request.adjust_type,
             "subscription_type": request.subscription_type.value,
             "message": "订阅创建成功"
         }

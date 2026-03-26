@@ -343,6 +343,9 @@ class DataGrpcService(data_pb2_grpc.DataServiceServicer):
             common_pb2.PERIOD_TYPE_1D: PeriodType.DAILY,
             common_pb2.PERIOD_TYPE_1W: PeriodType.WEEKLY,
             common_pb2.PERIOD_TYPE_1MON: PeriodType.MONTHLY,
+            common_pb2.PERIOD_TYPE_1Q: PeriodType.QUARTER,
+            common_pb2.PERIOD_TYPE_1HY: PeriodType.YEAR_HALF,
+            common_pb2.PERIOD_TYPE_1Y: PeriodType.YEAR,
         }
         
         return RestMarketDataRequest(

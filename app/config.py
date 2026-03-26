@@ -92,6 +92,10 @@ class CORSConfig(BaseModel):
     allow_methods: List[str] = Field(default_factory=lambda: ["*"])
     allow_headers: List[str] = Field(default_factory=lambda: ["*"])
 
+class UvicornConfig(BaseModel):
+    """uvicorn配置"""
+    timeout_keep_alive: int = 5
+
 
 class Settings(BaseModel):
     """完整配置类"""
@@ -102,6 +106,7 @@ class Settings(BaseModel):
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     cors: CORSConfig = Field(default_factory=CORSConfig)
+    uvicorn: UvicornConfig = Field(default_factory=UvicornConfig)
     
     # gRPC 配置（使用属性访问以保持向后兼容）
     grpc_enabled: bool = True
@@ -191,7 +196,15 @@ def load_config(config_file: Optional[str] = None) -> Settings:
                 "allow_credentials": True,
                 "allow_methods": ["*"],
                 "allow_headers": ["*"]
-            })
+            }),
+            "uvicorn": {
+                "timeout_keep_alive": config_data.get("uvicorn", {}).get("timeout_keep_alive", 5)
+            },
+            "grpc_enabled": config_data.get("grpc", {}).get("enabled", True),
+            "grpc_host": config_data.get("grpc", {}).get("host", "0.0.0.0"),
+            "grpc_port": config_data.get("grpc", {}).get("port", 50051),
+            "grpc_max_workers": config_data.get("grpc", {}).get("max_workers", 10),
+            "grpc_max_message_length": config_data.get("grpc", {}).get("max_message_length", 50 * 1024 * 1024),
         }
         
         return Settings(**final_config)
