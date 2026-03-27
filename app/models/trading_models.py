@@ -1,15 +1,17 @@
 """
 交易相关模型
 """
+
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, Optional
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class AccountType(str, Enum):
+class AccountType(StrEnum):
     """账户类型"""
+
     FUTURE = "FUTURE"
     SECURITY = "SECURITY"
     CREDIT = "CREDIT"
@@ -21,22 +23,25 @@ class AccountType(str, Enum):
     SHENGANGTONG = "SHENGANGTONG"
 
 
-class OrderSide(str, Enum):
+class OrderSide(StrEnum):
     """订单方向"""
+
     BUY = "BUY"
     SELL = "SELL"
 
 
-class OrderType(str, Enum):
+class OrderType(StrEnum):
     """订单类型"""
+
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     STOP = "STOP"
     STOP_LIMIT = "STOP_LIMIT"
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     """订单状态"""
+
     PENDING = "PENDING"
     SUBMITTED = "SUBMITTED"
     PARTIAL_FILLED = "PARTIAL_FILLED"
@@ -47,6 +52,7 @@ class OrderStatus(str, Enum):
 
 class AccountInfo(BaseModel):
     """账户信息"""
+
     account_id: str
     account_type: AccountType
     account_name: str
@@ -60,6 +66,7 @@ class AccountInfo(BaseModel):
 
 class PositionInfo(BaseModel):
     """持仓信息"""
+
     stock_code: str
     stock_name: str
     volume: int
@@ -74,48 +81,52 @@ class PositionInfo(BaseModel):
 
 class OrderRequest(BaseModel):
     """下单请求"""
+
     stock_code: str = Field(..., description="股票代码")
     side: OrderSide = Field(..., description="买卖方向")
     order_type: OrderType = Field(OrderType.LIMIT, description="订单类型")
     volume: int = Field(..., description="数量")
-    price: Optional[float] = Field(None, description="价格")
-    strategy_name: Optional[str] = Field(None, description="策略名称")
-    
-    @field_validator('volume')
+    price: float | None = Field(None, description="价格")
+    strategy_name: str | None = Field(None, description="策略名称")
+
+    @field_validator("volume")
     def validate_volume(cls, v):
         if v <= 0:
-            raise ValueError('数量必须大于0')
+            raise ValueError("数量必须大于0")
         return v
-    
-    @field_validator('price')
+
+    @field_validator("price")
     def validate_price(cls, v):
         if v is not None and v <= 0:
-            raise ValueError('价格必须大于0')
+            raise ValueError("价格必须大于0")
         return v
 
 
 class OrderResponse(BaseModel):
     """订单响应"""
+
     order_id: str
     stock_code: str
     side: str
     order_type: str
     volume: int
-    price: Optional[float]
+    price: float | None
     status: str
     submitted_time: datetime
     filled_volume: int = 0
     filled_amount: float = 0.0
-    average_price: Optional[float] = None
+    average_price: float | None = None
 
 
 class CancelOrderRequest(BaseModel):
     """撤单请求"""
+
     order_id: str = Field(..., description="订单ID")
 
 
 class TradeInfo(BaseModel):
     """成交信息"""
+
     trade_id: str
     order_id: str
     stock_code: str
@@ -129,6 +140,7 @@ class TradeInfo(BaseModel):
 
 class AssetInfo(BaseModel):
     """资产信息"""
+
     total_asset: float
     market_value: float
     cash: float
@@ -140,6 +152,7 @@ class AssetInfo(BaseModel):
 
 class RiskInfo(BaseModel):
     """风险信息"""
+
     position_ratio: float
     cash_ratio: float
     max_drawdown: float
@@ -149,24 +162,27 @@ class RiskInfo(BaseModel):
 
 class StrategyInfo(BaseModel):
     """策略信息"""
+
     strategy_name: str
     strategy_type: str
     status: str
     created_time: datetime
     last_update_time: datetime
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
 
 
 class ConnectRequest(BaseModel):
     """连接请求"""
+
     account_id: str = Field(..., description="账户ID")
-    password: Optional[str] = Field(None, description="密码")
-    client_id: Optional[int] = Field(None, description="客户端ID")
+    password: str | None = Field(None, description="密码")
+    client_id: int | None = Field(None, description="客户端ID")
 
 
 class ConnectResponse(BaseModel):
     """连接响应"""
+
     success: bool
     message: str
-    session_id: Optional[str] = None
-    account_info: Optional[AccountInfo] = None
+    session_id: str | None = None
+    account_info: AccountInfo | None = None
