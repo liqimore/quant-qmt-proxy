@@ -33,3 +33,31 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
 priority = "primary"
 
 # poetry add fastapi uvicorn[standard] pydantic pydantic-settings python-multipart python-dotenv httpx loguru PyYAML grpcio grpcio-tools protobuf grpcio-reflection xtquant
+
+[tool.ruff]
+# 全局设置（非 lint 相关）
+line-length = 100
+target-version = "py312"
+fix = true               # 自动修复
+unsafe-fixes = false     # 禁用不安全的修复
+
+# 所有 linter 规则移到 [tool.ruff.lint] 下
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "TID", "PT", "RUF"]
+ignore = ["E501", "D", "RUF001", "RUF002", "RUF003", "RUF012", "F405", "F403", "W291", "E402"]
+
+# isort 也作为 lint 的子配置（或独立但推荐放 lint 下）
+[tool.ruff.lint.isort]
+known-first-party = ["src/app", "tests"]
+combine-as-imports = true            # 合并导入语句
+split-on-trailing-comma = false      # 不拆分尾随逗号
+lines-between-types = 1              # 类型之间空一行
+
+# 格式化配置（独立）
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)"
+]
