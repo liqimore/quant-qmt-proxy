@@ -24,6 +24,11 @@
 - 支持普通行情订阅与 whole quote 订阅，可通过 WebSocket 或 gRPC 流式消费
 - 提供完整的本地自动化测试基座，便于在真实 QMT 接入前完成大部分验证
 
+## 近期测试
+已通过 miniQMT模拟客户端 全量用例，真实环境全量功能待验证
+<img width="1279" height="546" alt="Snipaste_2026-04-26_19-50-27" src="https://github.com/user-attachments/assets/88f2419a-de11-48b4-9556-c3e0899a9622" />
+<img width="1265" height="376" alt="Snipaste_2026-04-26_19-53-35" src="https://github.com/user-attachments/assets/7b517615-2db3-4697-849c-89a753e184f6" />
+
 ## 快速开始
 
 ### 1. 环境要求
