@@ -207,6 +207,16 @@ class XtDataGateway:
                 error_code="XTDATA_UNAVAILABLE",
             )
 
+    def download_history_data(self, symbol: str, period: str, *, incrementally: bool = True) -> None:
+        validate_stock_code(symbol)
+        if self._is_mock_mode():
+            logger.debug(
+                f"mock download_history_data skipped: symbol={symbol} period={period} incrementally={incrementally}"
+            )
+            return
+        self.ensure_ready()
+        xtdata.download_history_data(symbol, period=period, incrementally=incrementally)
+
     def get_kline_history(self, query: KlineHistoryQuery) -> list[dict[str, Any]]:
         if self._is_mock_mode():
             return self._mock_kline_history(query)

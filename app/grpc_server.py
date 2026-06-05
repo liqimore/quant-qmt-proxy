@@ -236,7 +236,10 @@ def create_grpc_server(settings: Settings | None = None) -> grpc.Server:
 
 
 def serve(settings: Settings | None = None) -> None:
+    from app.startup import bootstrap_application, shutdown_application
+
     settings = settings or get_settings()
+    bootstrap_application(settings)
     server = create_grpc_server(settings)
     server.start()
     bound_port = getattr(server, "_bound_port", settings.grpc_port)
@@ -246,6 +249,8 @@ def serve(settings: Settings | None = None) -> None:
     except KeyboardInterrupt:
         logger.info("gRPC server stopping")
         server.stop(grace=5)
+    finally:
+        shutdown_application()
 
 
 if __name__ == "__main__":

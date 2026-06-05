@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.dependencies import get_trading_session_manager, get_ui_subscription_service
+from app.startup import bootstrap_application, shutdown_application
 from app.routers import data, health, trading, websocket
 from app.utils.exceptions import XTQuantException, handle_xtquant_exception
 from app.utils.helpers import format_response
@@ -21,8 +22,10 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging_from_settings(settings)
     log_runtime_configuration("rest", settings)
+    bootstrap_application(settings)
     logger.info("application startup complete")
     yield
+    shutdown_application()
     try:
         get_ui_subscription_service(settings).hub.shutdown()
     except Exception as exc:

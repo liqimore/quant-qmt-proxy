@@ -110,6 +110,18 @@ class TestingConfig(BaseModel):
     prod_unlock_token: str | None = None
 
 
+class MarketDataSyncConfig(BaseModel):
+    enabled: bool = False
+    cron_time: str = "18:00"
+    periods: list[str] = Field(default_factory=lambda: ["1d", "1m"])
+    concurrency: int = 3
+    on_startup: bool = True
+    max_retries: int = 2
+    retry_backoff_seconds: float = 1.0
+    fail_fast: bool = False
+    symbols_override: list[str] | None = None
+
+
 class Settings(BaseModel):
     app: AppConfig = Field(default_factory=AppConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
@@ -120,12 +132,16 @@ class Settings(BaseModel):
     cors: CORSConfig = Field(default_factory=CORSConfig)
     uvicorn: UvicornConfig = Field(default_factory=UvicornConfig)
     testing: TestingConfig = Field(default_factory=TestingConfig)
+    market_data_sync: MarketDataSyncConfig = Field(default_factory=MarketDataSyncConfig)
     grpc_enabled: bool = True
     grpc_host: str = "0.0.0.0"
     grpc_port: int = 50051
     grpc_max_workers: int = 10
     grpc_max_message_length: int = 50 * 1024 * 1024
     app_servers: str = "all"
+
+    def market_data_sync_effective_enabled(self) -> bool:
+        return self.market_data_sync.enabled and self.xtquant.mode != XTQuantMode.MOCK
 
 
 def _env_flag(name: str, default: bool) -> bool:
@@ -327,6 +343,7 @@ def load_config(
             "qmt_userdata_path": testing_config.get("qmt_userdata_path"),
             "prod_unlock_token": testing_config.get("prod_unlock_token"),
         },
+        "market_data_sync": config_data.get("market_data_sync", {}),
         "grpc_enabled": config_data.get("grpc", {}).get("enabled", True),
         "grpc_host": grpc_env_host or config_data.get("grpc", {}).get("host", "0.0.0.0"),
         "grpc_port": int(grpc_env_port or config_data.get("grpc", {}).get("port", 50051)),

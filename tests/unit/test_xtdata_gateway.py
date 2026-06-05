@@ -119,6 +119,29 @@ def test_l2_helpers_accept_empty_array_payloads(monkeypatch):
     ]
 
 
+def test_mock_mode_download_history_data_noop():
+    gateway = XtDataGateway(build_settings("mock"))
+    gateway.download_history_data("000001.SZ", "1d", incrementally=True)
+
+
+def test_dev_mode_download_calls_xtdata(monkeypatch):
+    recorded: list[tuple[str, str, bool]] = []
+
+    monkeypatch.setattr(XtDataGateway, "_try_initialize", lambda self: setattr(self, "_initialized", True))
+
+    class DummyXtData:
+        @staticmethod
+        def download_history_data(symbol, period, incrementally=True):
+            recorded.append((symbol, period, incrementally))
+
+    monkeypatch.setattr(xtdata_gateway_module, "xtdata", DummyXtData())
+    monkeypatch.setattr(xtdata_gateway_module, "XTQUANT_DATA_AVAILABLE", True)
+
+    gateway = XtDataGateway(build_settings("dev"))
+    gateway.download_history_data("000001.SZ", "1m", incrementally=True)
+    assert recorded == [("000001.SZ", "1m", True)]
+
+
 def test_trading_calendar_unsupported_maps_to_feature_not_supported(monkeypatch):
     monkeypatch.setattr(XtDataGateway, "_try_initialize", lambda self: setattr(self, "_initialized", True))
     gateway = XtDataGateway(build_settings("dev"))
