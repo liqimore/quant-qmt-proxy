@@ -100,8 +100,20 @@ class HistoryDownloadPhase:
                     if self.fail_fast:
                         raise
 
+        stop_flag = {"abort": False}
+
+        def download_symbol_with_flag(symbol: str) -> None:
+            if stop_flag["abort"]:
+                return
+            download_symbol(symbol)
+
         with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
-            futures = {executor.submit(download_symbol, symbol): symbol for symbol in symbols}
+            futures = {executor.submit(download_symbol_with_flag, symbol): symbol for symbol in symbols}
             for future in as_completed(futures):
                 symbol = futures[future]
-                future.result()
+                try:
+                    future.result()
+                except Exception:
+                    if self.fail_fast:
+                        stop_flag["abort"] = True
+                    raise
