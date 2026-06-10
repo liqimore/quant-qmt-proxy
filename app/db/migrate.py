@@ -25,12 +25,8 @@ def _alembic_config(database_url: str) -> Config:
 def upgrade_database(database_url: str) -> Engine:
     """Apply Alembic migrations on startup (no separate CLI required)."""
     engine = create_db_engine(database_url)
-    try:
-        command.upgrade(_alembic_config(database_url), "head")
-        logger.info(f"database migrations applied: {database_url}")
-    except Exception as exc:
-        logger.warning(f"alembic upgrade failed, falling back to create_all: {exc}")
-        init_db(engine)
+    command.upgrade(_alembic_config(database_url), "head")
+    logger.info(f"database migrations applied: {database_url}")
     return engine
 
 
